@@ -3,7 +3,7 @@
 Run from the source checkout, for example:
     python scripts/capture_ui.py --output build/ui-screenshots
 
-Windows captures use Pillow's native window handle support. Default Windows/Tk
+Windows captures use GDI PrintWindow into a dedicated bitmap. Default Windows/Tk
 scaling is captured first; a fresh application then checks Tk's 120-DPI layout.
 The latter changes Tk font/layout scaling only, not the Windows display mode.
 """
@@ -18,7 +18,7 @@ from tempfile import TemporaryDirectory
 import tkinter as tk
 from tkinter import ttk
 
-from PIL import ImageGrab, ImageStat
+from PIL import Image, ImageGrab, ImageStat
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
@@ -114,13 +114,138 @@ def require_visible(widget, within, description, *, natural_width=False):
         raise AssertionError(f"{description}: control is narrower than its label")
 
 
+def capture_windows_window(window):
+    """Ask the window to paint into memory, including content off the desktop.
+
+    Screen BitBlt (including Pillow's HWND grab) clips at the runner's monitor.
+    PrintWindow renders the native window into our independently sized bitmap.
+    No display mode, system DPI, or user data is changed.
+    """
+    import ctypes
+    from ctypes import wintypes
+
+    class BitmapInfoHeader(ctypes.Structure):
+        _fields_ = [("size", wintypes.DWORD), ("width", wintypes.LONG),
+                    ("height", wintypes.LONG), ("planes", wintypes.WORD),
+                    ("bit_count", wintypes.WORD), ("compression", wintypes.DWORD),
+                    ("image_size", wintypes.DWORD), ("x_pixels_per_meter", wintypes.LONG),
+                    ("y_pixels_per_meter", wintypes.LONG), ("colors_used", wintypes.DWORD),
+                    ("colors_important", wintypes.DWORD)]
+
+    class BitmapInfo(ctypes.Structure):
+        _fields_ = [("header", BitmapInfoHeader), ("colors", wintypes.DWORD * 1)]
+
+    user32 = ctypes.WinDLL("user32", use_last_error=True)
+    gdi32 = ctypes.WinDLL("gdi32", use_last_error=True)
+    user32.GetWindowRect.argtypes = [wintypes.HWND, ctypes.POINTER(wintypes.RECT)]
+    user32.GetWindowRect.restype = wintypes.BOOL
+    user32.GetClientRect.argtypes = [wintypes.HWND, ctypes.POINTER(wintypes.RECT)]
+    user32.GetClientRect.restype = wintypes.BOOL
+    user32.ClientToScreen.argtypes = [wintypes.HWND, ctypes.POINTER(wintypes.POINT)]
+    user32.ClientToScreen.restype = wintypes.BOOL
+    user32.GetWindowDC.argtypes = [wintypes.HWND]
+    user32.GetWindowDC.restype = wintypes.HDC
+    user32.ReleaseDC.argtypes = [wintypes.HWND, wintypes.HDC]
+    user32.ReleaseDC.restype = ctypes.c_int
+    user32.PrintWindow.argtypes = [wintypes.HWND, wintypes.HDC, wintypes.UINT]
+    user32.PrintWindow.restype = wintypes.BOOL
+    gdi32.CreateCompatibleDC.argtypes = [wintypes.HDC]
+    gdi32.CreateCompatibleDC.restype = wintypes.HDC
+    gdi32.CreateCompatibleBitmap.argtypes = [wintypes.HDC, ctypes.c_int, ctypes.c_int]
+    gdi32.CreateCompatibleBitmap.restype = wintypes.HBITMAP
+    gdi32.SelectObject.argtypes = [wintypes.HDC, wintypes.HGDIOBJ]
+    gdi32.SelectObject.restype = wintypes.HGDIOBJ
+    gdi32.PatBlt.argtypes = [wintypes.HDC, ctypes.c_int, ctypes.c_int,
+                           ctypes.c_int, ctypes.c_int, wintypes.DWORD]
+    gdi32.PatBlt.restype = wintypes.BOOL
+    gdi32.GetDIBits.argtypes = [wintypes.HDC, wintypes.HBITMAP, wintypes.UINT,
+                              wintypes.UINT, ctypes.c_void_p, ctypes.POINTER(BitmapInfo), wintypes.UINT]
+    gdi32.GetDIBits.restype = ctypes.c_int
+    gdi32.DeleteObject.argtypes = [wintypes.HGDIOBJ]
+    gdi32.DeleteObject.restype = wintypes.BOOL
+    gdi32.DeleteDC.argtypes = [wintypes.HDC]
+    gdi32.DeleteDC.restype = wintypes.BOOL
+
+    def checked(value, operation):
+        if not value:
+            raise OSError(ctypes.get_last_error(), f"Windows capture: {operation} failed")
+        return value
+
+    hwnd = int(window.wm_frame(), 0)
+    rectangle, client = wintypes.RECT(), wintypes.RECT()
+    origin = wintypes.POINT(0, 0)
+    checked(user32.GetWindowRect(hwnd, ctypes.byref(rectangle)), "GetWindowRect")
+    checked(user32.GetClientRect(hwnd, ctypes.byref(client)), "GetClientRect")
+    checked(user32.ClientToScreen(hwnd, ctypes.byref(origin)), "ClientToScreen")
+    width, height = rectangle.right - rectangle.left, rectangle.bottom - rectangle.top
+    if width <= 0 or height <= 0:
+        raise AssertionError(f"Windows capture: invalid native window dimensions {(width, height)}")
+    source_dc = memory_dc = bitmap = previous_bitmap = None
+    selected = False
+    try:
+        source_dc = checked(user32.GetWindowDC(hwnd), "GetWindowDC")
+        memory_dc = checked(gdi32.CreateCompatibleDC(source_dc), "CreateCompatibleDC")
+        bitmap = checked(gdi32.CreateCompatibleBitmap(source_dc, width, height), "CreateCompatibleBitmap")
+        previous_bitmap = checked(gdi32.SelectObject(memory_dc, bitmap), "SelectObject")
+        if previous_bitmap == ctypes.c_void_p(-1).value:
+            raise OSError("Windows capture: SelectObject returned HGDI_ERROR")
+        selected = True
+        # Deterministic black makes an unpainted strip detectable after capture.
+        checked(gdi32.PatBlt(memory_dc, 0, 0, width, height, 0x00000042), "PatBlt BLACKNESS")
+        checked(user32.PrintWindow(hwnd, memory_dc, 2), "PrintWindow PW_RENDERFULLCONTENT")
+        # GetDIBits requires that the bitmap is not selected into a DC.
+        checked(gdi32.SelectObject(memory_dc, previous_bitmap), "restore original bitmap")
+        selected = False
+        info = BitmapInfo()
+        info.header.size = ctypes.sizeof(BitmapInfoHeader)
+        info.header.width, info.header.height = width, -height  # top-down BGRX
+        info.header.planes, info.header.bit_count = 1, 32
+        info.header.compression = 0  # BI_RGB, no palette or compression
+        info.header.image_size = width * height * 4
+        buffer = ctypes.create_string_buffer(info.header.image_size)
+        copied = gdi32.GetDIBits(source_dc, bitmap, 0, height, buffer, ctypes.byref(info), 0)
+        if copied != height:
+            raise OSError(ctypes.get_last_error(), f"Windows capture: GetDIBits copied {copied}/{height} rows")
+        whole = Image.frombytes("RGB", (width, height), buffer.raw, "raw", "BGRX", width * 4, 1)
+        # Exclude the native caption/invisible resize border. Keep exactly the
+        # client area being checked, with no desktop-coordinate/DPI guessing.
+        left, top = origin.x - rectangle.left, origin.y - rectangle.top
+        right, bottom = left + client.right - client.left, top + client.bottom - client.top
+        try:
+            if not (0 <= left < right <= width and 0 <= top < bottom <= height):
+                raise AssertionError("Windows capture: native client rectangle lies outside window bitmap")
+            return whole.crop((left, top, right, bottom))
+        finally:
+            whole.close()
+    finally:
+        if selected:
+            gdi32.SelectObject(memory_dc, previous_bitmap)
+        if bitmap:
+            gdi32.DeleteObject(bitmap)
+        if memory_dc:
+            gdi32.DeleteDC(memory_dc)
+        if source_dc:
+            user32.ReleaseDC(hwnd, source_dc)
+
+
+def check_black_padding(picture, description):
+    """Reject the black off-desktop strips produced by clipped screen grabs."""
+    with picture.convert("RGB") as rgb:
+        painted = rgb.getbbox()
+    if painted is None:
+        raise AssertionError(f"{description}: screenshot is entirely black")
+    left, top, right, bottom = painted
+    padding = (left, top, picture.width - right, picture.height - bottom)
+    if max(padding) > 8:
+        raise AssertionError(f"{description}: screenshot contains unrendered solid-black edge padding "
+                             f"(left,top,right,bottom)={padding}")
+
+
 def capture(window, target: Path, records):
     window.lift()
     settle(window)
     if sys.platform == "win32":
-        # This captures the actual native window, including its frame, without
-        # converting between Windows logical coordinates and physical pixels.
-        picture = ImageGrab.grab(window=int(window.wm_frame(), 0), include_layered_windows=True)
+        picture = capture_windows_window(window)
     else:
         picture = ImageGrab.grab(bbox=bounds(window))
     try:
@@ -128,11 +253,13 @@ def capture(window, target: Path, records):
             raise AssertionError(f"{target.name}: screenshot does not contain the complete window")
         if max(ImageStat.Stat(picture.convert("RGB")).var) < 1:
             raise AssertionError(f"{target.name}: blank screenshot")
+        check_black_padding(picture, target.name)
         picture.save(target, format="PNG")
         if target.stat().st_size == 0:
             raise AssertionError(f"{target.name}: empty PNG")
         records.append({"file": target.name, "pixels": list(picture.size),
-                        "tk_client_size": [window.winfo_width(), window.winfo_height()]})
+                        "tk_client_size": [window.winfo_width(), window.winfo_height()],
+                        "capture_method": "Win32 PrintWindow" if sys.platform == "win32" else "Pillow ImageGrab"})
     finally:
         picture.close()
 

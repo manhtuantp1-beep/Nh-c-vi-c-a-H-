@@ -15,17 +15,21 @@ Hướng dẫn giao diện và nâng cấp: [docs/giao-dien.md](docs/giao-dien.m
 
 ## Tải và cài trên Windows
 
-**[Xem bộ cài Windows trong Releases](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases)**
+**[Tải bộ cài Nhắc việc anh Hà 2.0.1 — Windows x64](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/download/windows-2.0.1-preview.1/NhacViecAnhHa-Setup-2.0.1-x64.exe)**
 
-Mã nguồn hiện tại là **2.0.1**, dành cho Windows 10/11 x64. Bộ cài 2.0.1 đang được dựng và kiểm tra; kết quả sẽ được ghi trong [tài liệu kiểm thử](docs/kiem-thu.md) trước khi phát hành. Mã nguồn: [GitHub](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-).
+Mã nguồn hiện tại là **2.0.1**, dành cho Windows 10/11 x64. Bộ cài đã được dựng và kiểm tra thành công trên runner Windows `windows-2022` trong [lần dựng 39719044251](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/actions/runs/39719044251), rồi [phát hành tại đây](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/tag/windows-2.0.1-preview.1). Mã nguồn: [GitHub](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-).
 
-1. Khi bản 2.0.1 được phát hành, tải `NhacViecAnhHa-Setup-2.0.1-x64.exe` và `SHA256SUMS.txt` trong cùng bản phát hành.
+1. Tải bộ cài ở liên kết trên và [SHA256SUMS.txt](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/download/windows-2.0.1-preview.1/SHA256SUMS.txt) trong cùng bản phát hành.
 2. Đối chiếu SHA256, mở bộ cài và làm theo hướng dẫn. Dùng bộ cài không cần cài Python hoặc NSIS.
 3. Mở Nhắc việc anh Hà từ menu Start hoặc trang cuối của bộ cài. Dữ liệu mới nằm riêng tại `%USERPROFILE%\NhacViecAnhHaMoi\data\tasks.db`.
 
 Nếu đang dùng 2.0.0, sao lưu rồi **Thoát hẳn** ứng dụng trước khi chạy bộ cài mới. Cài vào cùng vị trí sẽ dùng lại dữ liệu của 2.0.0; không cần khôi phục hoặc nhập lại công việc.
 
+Kích thước bộ cài: 17.070.511 byte. SHA256: `4590f51fd53842366c219f12613a79fd47dbf3986c52211408575cb93e3da38c`.
+
 Bộ cài chưa ký số; Windows có thể hiển thị cảnh báo SmartScreen. Khay hệ thống, thông báo Windows và tự chạy khi đăng nhập cần được kiểm tra thêm trên máy sử dụng thực tế.
+
+Ảnh giao diện trên Windows: [Biểu mẫu công việc](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/download/windows-2.0.1-preview.1/task-dialog.png). Xem thêm [hướng dẫn giao diện](docs/giao-dien.md).
 
 ## Chạy mã nguồn
 
@@ -102,7 +106,7 @@ Trên GitHub, mở Actions → Build Windows installer → Run workflow để d�
 
 ## Phạm vi kiểm tra
 
-Kết quả kiểm tra của **2.0.1** đang được cập nhật trong [docs/kiem-thu.md](docs/kiem-thu.md). Không dùng kết quả của bản trước để xác nhận bộ cài mới.
+**2.0.1**: mã nguồn [6dc1acf](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/tree/6dc1acf1db2d04e6f9972e11d0fb5801f590496b) đã đạt 77 kiểm thử trên Windows, kiểm tra `--self-test` / `--gui-smoke-test` của EXE, 24 kiểm tra bố cục ở cỡ chữ mặc định và Tk 120 DPI, cùng kiểm tra cài/gỡ giữ nguyên dữ liệu. Xem [lần dựng 39719044251](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/actions/runs/39719044251) và [chi tiết kiểm thử](docs/kiem-thu.md).
 
 Lịch sử **2.0.0**: mã nguồn [b009740](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/tree/b0097407d3a19f8d5c3e564206af40f9e1531f26) đã đạt 75 kiểm thử trên runner Windows `windows-2022` với Python 3.13 x64 trong [lần dựng 39707130999](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/actions/runs/39707130999). EXE của bản đó đạt `--self-test` và `--gui-smoke-test`; bộ cài đã qua kiểm tra cài/gỡ im lặng và giữ nguyên dữ liệu đánh dấu. Khay hệ thống, tự chạy khi đăng nhập và thông báo vẫn cần kiểm tra trên máy Windows đích.
 

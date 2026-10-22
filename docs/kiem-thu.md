@@ -2,7 +2,13 @@
 
 ## Bản 2.0.1 — giao diện mới
 
-Ngày 22/10/2026: bản 2.0.1 đạt 77 kiểm thử trên Linux/Xvfb, hai kiểm tra ứng dụng `--self-test` / `--gui-smoke-test`, cùng 24 kiểm tra bố cục và 24 ảnh chụp ở 1120×720, 1366×768, cỡ chữ mặc định và Tk 120 DPI. Các kiểm tra hồi quy mới xác nhận văn bản dài không bị cắt khi thay đổi kích thước và nút lưu luôn hiển thị khi cuộn biểu mẫu. Kết quả dựng/cài đặt Windows 2.0.1 sẽ được ghi sau khi workflow hoàn tất. Kết quả lịch sử bên dưới thuộc bản 2.0.0.
+Ngày 22/10/2026: bản 2.0.1 đạt 77 kiểm thử trên Linux/Xvfb, hai kiểm tra ứng dụng `--self-test` / `--gui-smoke-test`, cùng 24 kiểm tra bố cục và 24 ảnh chụp ở 1120×720, 1366×768, cỡ chữ mặc định và Tk 120 DPI. Các kiểm tra hồi quy mới xác nhận văn bản dài không bị cắt khi thay đổi kích thước và nút lưu luôn hiển thị khi cuộn biểu mẫu.
+
+Trên Windows, [lần dựng GitHub Actions 39719044251](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/actions/runs/39719044251) đã thành công với mã nguồn [6dc1acf1db2d04e6f9972e11d0fb5801f590496b](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/tree/6dc1acf1db2d04e6f9972e11d0fb5801f590496b), runner `windows-2022` và Python 3.13 x64. Lần dựng đã chạy đạt 77 kiểm thử, tạo EXE bằng PyInstaller và chạy thành công hai kiểm tra `--self-test` / `--gui-smoke-test` của EXE. Kiểm tra giao diện đạt 24 tình huống bố cục ở cỡ chữ mặc định và Tk 120 DPI. Bộ cài NSIS đã qua kiểm tra cài/gỡ im lặng, chạy tự kiểm tra sau khi cài và giữ nguyên các tệp dữ liệu đánh dấu.
+
+[Bản phát hành Windows 2.0.1](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/tag/windows-2.0.1-preview.1) đã được xuất bản từ artifact đã kiểm chứng qua [workflow phát hành 39719246638](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/actions/runs/39719246638). Bản phát hành có tám tệp, gồm bộ cài, SHA256, báo cáo kiểm tra và ảnh giao diện Windows. Bộ cài `NhacViecAnhHa-Setup-2.0.1-x64.exe` có kích thước 17.070.511 byte, SHA256 `4590f51fd53842366c219f12613a79fd47dbf3986c52211408575cb93e3da38c`.
+
+Các kết quả này xác nhận quá trình dựng và các kiểm tra tự động; khay hệ thống, thông báo Windows và tự chạy khi đăng nhập vẫn cần kiểm tra trên máy sử dụng thực tế. Bộ cài chưa ký số.
 
 ## Lịch sử bản 2.0.0
 

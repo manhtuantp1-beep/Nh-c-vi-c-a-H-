@@ -1,5 +1,11 @@
 # Giao diện và nâng cấp 2.0.1
 
+## Ảnh giao diện trên Windows
+
+Ảnh chụp từ bản kiểm tra Windows 2.0.1; nội dung công việc là dữ liệu minh họa tạm thời, không tự thêm vào dữ liệu người dùng.
+
+![Biểu mẫu công việc trên Windows](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/download/windows-2.0.1-preview.1/task-dialog.png)
+
 ## Không gian làm việc
 
 Thanh bên trái chia thành Công việc và Tiện ích. Mục đang mở có nền xanh nhạt. Chọn Việc cần làm để xem công việc chưa hoàn thành; các mục Đang thực hiện, Sắp đến hạn, Đã hoàn thành và Đã hủy giúp tra cứu theo trạng thái. Chọn Lịch của anh để chuyển sang lịch.
@@ -45,7 +51,7 @@ Dữ liệu và báo cáo trên thanh bên mở menu Xuất báo cáo Excel, Sao
 
 1. Trong bản 2.0.0, chọn Sao lưu dữ liệu và lưu bản sao ở vị trí dễ tìm.
 2. Chọn Thoát hẳn trong ứng dụng hoặc menu khay hệ thống. Đóng cửa sổ bằng dấu X chỉ thu nhỏ ứng dụng và chưa đủ để cập nhật.
-3. Chạy bộ cài `NhacViecAnhHa-Setup-2.0.1-x64.exe` khi bản 2.0.1 được phát hành. Giữ nguyên thư mục cài đặt đang dùng, rồi hoàn tất cài đặt.
+3. Tải và chạy [bộ cài 2.0.1](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/download/windows-2.0.1-preview.1/NhacViecAnhHa-Setup-2.0.1-x64.exe). Giữ nguyên thư mục cài đặt đang dùng, rồi hoàn tất cài đặt.
 4. Mở ứng dụng và kiểm tra số phiên bản 2.0.1 ở thanh dưới cùng. Công việc, lịch và cài đặt của 2.0.0 dùng lại cơ sở dữ liệu hiện có tại `%USERPROFILE%\NhacViecAnhHaMoi\data\tasks.db`.
 
 2.0.1 không đổi định dạng hay vị trí cơ sở dữ liệu so với 2.0.0. Không cần khôi phục dữ liệu chỉ để nâng cấp giao diện. Dữ liệu của ứng dụng gốc 1.7.0 vẫn nằm riêng và chưa được tự động nhập vào bản mới.

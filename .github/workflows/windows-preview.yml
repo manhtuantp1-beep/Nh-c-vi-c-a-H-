@@ -1,0 +1,69 @@
+name: Refresh Windows interface previews
+
+on:
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  desktop-previews:
+    runs-on: windows-2022
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    env:
+      TESTED_SHA: 6dc1acf1db2d04e6f9972e11d0fb5801f590496b
+      RELEASE_TAG: windows-2.0.1-preview.1
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          architecture: 'x64'
+      - name: Verify the previews match the released application
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          & git diff --quiet $env:TESTED_SHA HEAD -- nhacviec requirements.txt
+          if ($LASTEXITCODE -ne 0) { throw 'Application code differs from the tested release.' }
+          $releaseJson = & gh api "repos/$env:GITHUB_REPOSITORY/releases/tags/$env:RELEASE_TAG"
+          if ($LASTEXITCODE -ne 0) { throw 'Unable to verify the existing release.' }
+          $release = ($releaseJson -join "`n") | ConvertFrom-Json
+          if ($release.target_commitish -cne $env:TESTED_SHA -or $release.draft -ne $false) {
+            throw 'The preview target does not match the tested release.'
+          }
+      - name: Install the pinned runtime dependencies
+        shell: pwsh
+        run: |
+          & python -m pip install --disable-pip-version-check -r requirements.txt
+          if ($LASTEXITCODE -ne 0) { throw 'Runtime dependency installation failed.' }
+      - name: Capture and verify the complete Windows interface
+        shell: pwsh
+        run: |
+          & python .\scripts\capture_ui.py --output .\build\ui-preview
+          if ($LASTEXITCODE -ne 0) {
+            $report = Get-Content .\build\ui-preview\layout-check.json -Raw | ConvertFrom-Json
+            $message = ([string]$report.error).Replace('%', '%25').Replace("`r", '%0D').Replace("`n", '%0A')
+            Write-Host "::error title=Windows preview capture::$message"
+            throw 'Complete Windows interface capture failed.'
+          }
+      - name: Update only the verified images and layout report
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $report = Get-Content .\build\ui-preview\layout-check.json -Raw | ConvertFrom-Json
+          if ($report.passed -ne $true -or $report.platform -cne 'win32' -or $report.version -cne '2.0.1' -or @($report.checks).Count -lt 24) {
+            throw 'Preview layout checks did not pass.'
+          }
+          & gh release upload $env:RELEASE_TAG --repo $env:GITHUB_REPOSITORY --clobber `
+            .\build\ui-preview\tasks-1366x768.png `
+            .\build\ui-preview\calendar-month-1366x768.png `
+            .\build\ui-preview\task-dialog.png `
+            .\build\ui-preview\layout-check.json
+          if ($LASTEXITCODE -ne 0) { throw 'Preview asset update failed.' }
