@@ -10,6 +10,8 @@ Trên Windows, [lần dựng GitHub Actions 39719044251](https://github.com/manh
 
 Các kết quả này xác nhận quá trình dựng và các kiểm tra tự động; khay hệ thống, thông báo Windows và tự chạy khi đăng nhập vẫn cần kiểm tra trên máy sử dụng thực tế. Bộ cài chưa ký số.
 
+Ảnh giao diện Windows đã được xác minh trong [lần chụp 39720076183](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/actions/runs/39720076183): 24 ảnh đầy đủ và 24 kiểm tra bố cục đạt, dùng màn hình runner 1920×1080 và cửa sổ 1120×720 / 1366×768, ở cỡ chữ mặc định và Tk 120 DPI. Workflow xác nhận mã ứng dụng và dependency trùng với bản dựng đã kiểm thử trước khi cập nhật ảnh và báo cáo trên Releases. Bộ cài và mã SHA256 giữ nguyên.
+
 ## Lịch sử bản 2.0.0
 
 Ngày kiểm tra gần nhất: 22/10/2026. Trên Windows, [lần dựng GitHub Actions 39707130999](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/actions/runs/39707130999) đã thành công với mã nguồn [b0097407d3a19f8d5c3e564206af40f9e1531f26](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/tree/b0097407d3a19f8d5c3e564206af40f9e1531f26), runner `windows-2022`, Python 3.13 x64 và dependency đã ghim trong `requirements-build.txt`.

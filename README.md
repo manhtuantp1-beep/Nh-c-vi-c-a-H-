@@ -29,7 +29,7 @@ Kích thước bộ cài: 17.070.511 byte. SHA256: `4590f51fd53842366c219f12613a
 
 Bộ cài chưa ký số; Windows có thể hiển thị cảnh báo SmartScreen. Khay hệ thống, thông báo Windows và tự chạy khi đăng nhập cần được kiểm tra thêm trên máy sử dụng thực tế.
 
-Ảnh giao diện trên Windows: [Biểu mẫu công việc](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/download/windows-2.0.1-preview.1/task-dialog.png). Xem thêm [hướng dẫn giao diện](docs/giao-dien.md).
+Ảnh giao diện thật trên Windows: [Danh sách công việc](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/download/windows-2.0.1-preview.1/tasks-1366x768.png) · [Lịch tháng](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/download/windows-2.0.1-preview.1/calendar-month-1366x768.png) · [Biểu mẫu công việc](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/download/windows-2.0.1-preview.1/task-dialog.png). Xem thêm [hướng dẫn giao diện](docs/giao-dien.md).
 
 ## Chạy mã nguồn
 

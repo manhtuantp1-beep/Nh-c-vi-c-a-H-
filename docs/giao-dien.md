@@ -4,6 +4,10 @@
 
 Ảnh chụp từ bản kiểm tra Windows 2.0.1; nội dung công việc là dữ liệu minh họa tạm thời, không tự thêm vào dữ liệu người dùng.
 
+![Danh sách công việc trên Windows](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/download/windows-2.0.1-preview.1/tasks-1366x768.png)
+
+![Lịch tháng trên Windows](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/download/windows-2.0.1-preview.1/calendar-month-1366x768.png)
+
 ![Biểu mẫu công việc trên Windows](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/download/windows-2.0.1-preview.1/task-dialog.png)
 
 ## Không gian làm việc
