@@ -14,7 +14,7 @@ if ($env:OS -ne "Windows_NT") {
 function Write-BuildErrorAnnotation {
     param([string]$Message)
     if ($env:GITHUB_ACTIONS -eq "true") {
-        if ($Message.Length -gt 14000) { $Message = $Message.Substring($Message.Length - 14000) }
+        if ($Message.Length -gt 3500) { $Message = $Message.Substring($Message.Length - 3500) }
         $Escaped = $Message.Replace('%', '%25').Replace("`r", '%0D').Replace("`n", '%0A')
         Write-Host "::error title=Windows build diagnostics::$Escaped"
     }
@@ -25,11 +25,20 @@ function Invoke-Checked {
     $LogDirectory = Join-Path $ProjectRoot "build"
     New-Item -ItemType Directory -Path $LogDirectory -Force | Out-Null
     $LogPath = Join-Path $LogDirectory "last-command.log"
-    & $Executable @Arguments 2>&1 | Tee-Object -FilePath $LogPath
-    $NativeExitCode = $LASTEXITCODE
+    if ($PSVersionTable.PSVersion.Major -lt 7) {
+        # Windows PowerShell 5.1 can turn redirected native stderr into a
+        # terminating NativeCommandError. Keep native streams intact there.
+        & $Executable @Arguments
+        $NativeExitCode = $LASTEXITCODE
+    } else {
+        & $Executable @Arguments 2>&1 | Tee-Object -FilePath $LogPath
+        $NativeExitCode = $LASTEXITCODE
+    }
     if ($NativeExitCode -ne 0) {
-        $Tail = Get-Content -LiteralPath $LogPath -Tail 65 | Out-String
-        Write-BuildErrorAnnotation $Tail
+        if ($PSVersionTable.PSVersion.Major -ge 7) {
+            $Tail = Get-Content -LiteralPath $LogPath -Tail 65 | Out-String
+            Write-BuildErrorAnnotation $Tail
+        }
         throw "Lệnh thất bại (mã $NativeExitCode): $Executable $($Arguments -join ' ')"
     }
 }

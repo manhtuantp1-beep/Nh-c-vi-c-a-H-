@@ -8,6 +8,7 @@ import unittest
 from unittest.mock import Mock, patch
 
 from nhacviec.platform_support import InstanceLock, PlatformSupport
+from nhacviec import platform_support
 
 
 class InstanceLockTests(unittest.TestCase):
@@ -49,8 +50,8 @@ class PlatformSupportTests(unittest.TestCase):
         self.show, self.exit, self.action = Mock(), Mock(), Mock()
         return PlatformSupport(self.root, self.show, self.exit, self.action)
 
-    @patch("nhacviec.platform_support.IS_WINDOWS", False)
-    @patch("nhacviec.platform_support.importlib.import_module")
+    @patch.object(platform_support, "IS_WINDOWS", False)
+    @patch.object(platform_support.importlib, "import_module")
     def test_linux_never_imports_native_modules_and_uses_taskbar(self, importer):
         importer.reset_mock()  # Exclude unittest.patch's own import resolution.
         support = self.make_support()
