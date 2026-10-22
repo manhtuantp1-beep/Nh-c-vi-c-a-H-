@@ -1,0 +1,87 @@
+name: Build Windows installer
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+
+jobs:
+  windows-installer:
+    runs-on: windows-2022
+    timeout-minutes: 30
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.13 x64
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+          architecture: 'x64'
+
+      - name: Install NSIS 3.11
+        shell: pwsh
+        run: |
+          choco install nsis --version=3.11 --yes --no-progress
+          if ($LASTEXITCODE -ne 0) { throw "NSIS installation failed" }
+
+      - name: Test and build installer
+        shell: pwsh
+        run: |
+          & .\scripts\build_windows.ps1 -PythonExe (Get-Command python).Source
+
+      - name: Smoke-test installation and uninstallation
+        shell: pwsh
+        run: |
+          $setup = Join-Path $PWD 'dist\NhacViecAnhHa-Setup-2.0.0-x64.exe'
+          $installDir = Join-Path $env:RUNNER_TEMP 'NhacViecAnhHaInstallSmoke'
+          $sentinels = @{}
+          foreach ($folderName in @('NhacViecAnhHaMoi', 'NhacViecAnhHa')) {
+            $dataDir = Join-Path $env:USERPROFILE "$folderName\data"
+            New-Item -ItemType Directory -Path $dataDir -Force | Out-Null
+            $sentinel = Join-Path $dataDir ('installer-smoke-' + [guid]::NewGuid().ToString('N') + '.txt')
+            'Preserve this user data during installer smoke test.' | Set-Content $sentinel
+            $sentinels[$sentinel] = (Get-FileHash $sentinel -Algorithm SHA256).Hash
+          }
+          $result = Start-Process -FilePath $setup -ArgumentList "/S /D=$installDir" -Wait -PassThru
+          if ($result.ExitCode -ne 0) { throw "Silent install failed: $($result.ExitCode)" }
+          $exe = Join-Path $installDir 'NhacViecAnhHa.exe'
+          if (-not (Test-Path $exe)) { throw "Installed application is missing" }
+          $reportPath = Join-Path $env:RUNNER_TEMP 'installed-self-test.json'
+          if (Test-Path $reportPath) { Remove-Item $reportPath }
+          $check = Start-Process -FilePath $exe -ArgumentList @('--self-test', '--self-test-report', ('"' + $reportPath + '"')) -Wait -PassThru
+          if ($check.ExitCode -ne 0) { throw "Installed application self-test failed" }
+          if (-not (Test-Path $reportPath)) { throw "Installed application did not write its self-test report" }
+          $report = Get-Content $reportPath -Raw | ConvertFrom-Json
+          if ($report.passed -ne $true -or $report.gui -ne $false -or $report.version -ne '2.0.0' -or @($report.checks).Count -eq 0) {
+            throw "Installed application did not pass the expected checks"
+          }
+          $uninstaller = Join-Path $installDir 'Uninstall.exe'
+          $remove = Start-Process -FilePath $uninstaller -ArgumentList '/S' -Wait -PassThru
+          if ($remove.ExitCode -ne 0) { throw "Uninstall failed: $($remove.ExitCode)" }
+          # NSIS uninstaller can delegate to its temporary copy; wait for completion.
+          $deadline = (Get-Date).AddSeconds(20)
+          while ((Test-Path $exe) -and (Get-Date) -lt $deadline) { Start-Sleep -Milliseconds 250 }
+          if (Test-Path $exe) { throw "Uninstaller left the application executable" }
+          foreach ($sentinel in $sentinels.Keys) {
+            if (-not (Test-Path $sentinel) -or (Get-FileHash $sentinel -Algorithm SHA256).Hash -ne $sentinels[$sentinel]) {
+              throw "Installer/uninstaller changed user data sentinel: $sentinel"
+            }
+            Remove-Item $sentinel
+          }
+
+      - name: Upload installer and checksum
+        uses: actions/upload-artifact@v4
+        with:
+          name: NhacViecAnhHa-Windows-x64-2.0.0
+          path: |
+            dist/NhacViecAnhHa-Setup-2.0.0-x64.exe
+            dist/SHA256SUMS.txt
+            dist/self-test.json
+            dist/gui-smoke-test.json
+          if-no-files-found: error
+          retention-days: 14
