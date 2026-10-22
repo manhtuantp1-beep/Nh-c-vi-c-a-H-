@@ -11,11 +11,26 @@ if ($env:OS -ne "Windows_NT") {
     throw "Bộ cài phải được đóng gói trên Windows 64-bit."
 }
 
+function Write-BuildErrorAnnotation {
+    param([string]$Message)
+    if ($env:GITHUB_ACTIONS -eq "true") {
+        if ($Message.Length -gt 14000) { $Message = $Message.Substring($Message.Length - 14000) }
+        $Escaped = $Message.Replace('%', '%25').Replace("`r", '%0D').Replace("`n", '%0A')
+        Write-Host "::error title=Windows build diagnostics::$Escaped"
+    }
+}
+
 function Invoke-Checked {
     param([string]$Executable, [string[]]$Arguments)
-    & $Executable @Arguments
-    if ($LASTEXITCODE -ne 0) {
-        throw "Lệnh thất bại (mã $LASTEXITCODE): $Executable $($Arguments -join ' ')"
+    $LogDirectory = Join-Path $ProjectRoot "build"
+    New-Item -ItemType Directory -Path $LogDirectory -Force | Out-Null
+    $LogPath = Join-Path $LogDirectory "last-command.log"
+    & $Executable @Arguments 2>&1 | Tee-Object -FilePath $LogPath
+    $NativeExitCode = $LASTEXITCODE
+    if ($NativeExitCode -ne 0) {
+        $Tail = Get-Content -LiteralPath $LogPath -Tail 65 | Out-String
+        Write-BuildErrorAnnotation $Tail
+        throw "Lệnh thất bại (mã $NativeExitCode): $Executable $($Arguments -join ' ')"
     }
 }
 
@@ -45,7 +60,12 @@ function Invoke-AppCheck {
         $Process.Kill()
         throw "Kiểm tra $Check vượt 60 giây."
     }
-    if ($Process.ExitCode -ne 0) { throw "Kiểm tra $Check thất bại (mã $($Process.ExitCode))." }
+    if ($Process.ExitCode -ne 0) {
+        if (Test-Path -LiteralPath $ReportPath) {
+            Write-BuildErrorAnnotation (Get-Content -LiteralPath $ReportPath -Raw)
+        }
+        throw "Kiểm tra $Check thất bại (mã $($Process.ExitCode))."
+    }
     if (-not (Test-Path -LiteralPath $ReportPath)) { throw "Kiểm tra $Check không tạo báo cáo của lần chạy này." }
     $Report = Get-Content -LiteralPath $ReportPath -Raw | ConvertFrom-Json
     if ($null -eq $Report) { throw "Báo cáo kiểm tra $Check rỗng." }
@@ -97,6 +117,9 @@ try {
     Write-Host "Bộ cài đã tạo: $SetupFile"
     Write-Host "Mã kiểm tra: $(Join-Path $DistRoot 'SHA256SUMS.txt')"
     Write-Host "Đã chạy kiểm thử mã nguồn, --self-test và --gui-smoke-test của EXE. Cần kiểm tra khay hệ thống và thông báo trên máy đích."
+} catch {
+    Write-BuildErrorAnnotation ($_ | Out-String)
+    throw
 } finally {
     Set-Location $PreviousLocation
 }
