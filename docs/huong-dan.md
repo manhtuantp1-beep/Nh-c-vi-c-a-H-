@@ -19,7 +19,7 @@ Bắt đầu chuyển việc sang Đang thực hiện. Tạm dừng đưa về C
 
 ## Lịch
 
-Chọn chế độ Tuần, Tháng hoặc Năm để xem cùng một bộ lịch. Bấm ngày để xem các buổi diễn ra. Tạo lịch với tên, ngày bắt đầu, giờ bắt đầu/kết thúc, phân loại và nội dung. Giờ kết thúc phải sau giờ bắt đầu trong cùng ngày.
+Chọn Tuần, Tháng hoặc Năm để xem cùng một bộ lịch. Chế độ Năm có 12 ô tháng với số buổi và các ngày có lịch; bấm ô tháng để mở lịch Tháng, rồi bấm ngày để xem các buổi diễn ra. Tạo lịch với tên, ngày bắt đầu, giờ bắt đầu/kết thúc, phân loại và nội dung. Giờ kết thúc phải sau giờ bắt đầu trong cùng ngày.
 
 - Một lần: dùng đúng ngày bắt đầu.
 - Hằng tuần: chọn các thứ và ngày bắt đầu áp dụng.
