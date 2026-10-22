@@ -163,9 +163,15 @@ def capture_phase(store, data_dir, output, report, today, task_id, *, scaling=No
             root.tk.call("tk", "scaling", scaling)
         app = NhacViecApp(root, store, data_dir, integrations=False, enable_timers=False)
         root.report_callback_exception = lambda kind, value, _tb: errors.append(f"{kind.__name__}: {value}")
+        screen_width, screen_height = root.winfo_screenwidth(), root.winfo_screenheight()
+        # Windows Tk derives its default maximum client size from the runner's
+        # desktop. Native HWND capture can include an offscreen client area;
+        # permit the requested test viewports without changing the display.
+        root.maxsize(max(1920, screen_width + 128), max(1080, screen_height + 128))
         report["scaling"].append({"phase": "native" if scaling is None else "tk120dpi",
                                   "tk_pixels_per_point": float(root.tk.call("tk", "scaling")),
-                                  "screen": [root.winfo_screenwidth(), root.winfo_screenheight()]})
+                                  "screen": [screen_width, screen_height],
+                                  "max_client_size": list(root.maxsize())})
         for width, height in ((1120, 720), (1366, 768)):
             size = f"{width}x{height}"
             context = size + suffix
@@ -173,7 +179,10 @@ def capture_phase(store, data_dir, output, report, today, task_id, *, scaling=No
             app.show_page("active")
             settle(root)
             if (root.winfo_width(), root.winfo_height()) != (width, height):
-                raise AssertionError(f"{context}: window manager did not allow requested client size")
+                raise AssertionError(
+                    f"{context}: window manager did not allow requested client size; "
+                    f"requested={(width, height)}, actual={(root.winfo_width(), root.winfo_height())}, "
+                    f"screen={(screen_width, screen_height)}, maxsize={root.maxsize()}")
             for key, button in app.nav_buttons.items():
                 require_visible(button, app.sidebar, f"{context}: sidebar {key}", natural_width=True)
             page = app.pages["active"]
