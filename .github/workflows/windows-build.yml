@@ -34,6 +34,11 @@ jobs:
         run: |
           & .\scripts\build_windows.ps1 -PythonExe (Get-Command python).Source
 
+      - name: Prepare the ephemeral Windows capture display
+        shell: pwsh
+        run: |
+          & .\scripts\prepare_capture_display.ps1
+
       - name: Capture and verify Windows desktop layouts
         shell: pwsh
         run: |
