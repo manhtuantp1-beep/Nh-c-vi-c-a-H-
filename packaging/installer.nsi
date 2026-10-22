@@ -4,7 +4,7 @@
 !include "x64.nsh"
 
 !ifndef APP_VERSION
-  !define APP_VERSION "2.0.0"
+  !define APP_VERSION "2.0.1"
 !endif
 !ifndef SOURCE_DIR
   !error "Pass /DSOURCE_DIR=<absolute path to dist\NhacViecAnhHa>"
@@ -28,7 +28,7 @@ SetCompressorDictSize 32
 ShowInstDetails show
 ShowUninstDetails show
 BrandingText "Nhắc việc anh Hà · Mã nguồn dựng mới ${APP_VERSION}"
-VIProductVersion "2.0.0.0"
+VIProductVersion "2.0.1.0"
 VIAddVersionKey "ProductName" "${APP_NAME}"
 VIAddVersionKey "ProductVersion" "${APP_VERSION}"
 VIAddVersionKey "FileVersion" "${APP_VERSION}"

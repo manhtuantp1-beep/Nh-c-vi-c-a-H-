@@ -61,7 +61,7 @@ class CalendarView(ttk.Frame):
     """CalendarView(parent, store, on_change=None); ``refresh()`` rereads storage."""
 
     def __init__(self, parent, store, on_change=None):
-        super().__init__(parent, padding=12)
+        super().__init__(parent, padding=(24, 18))
         self.store = store
         self.on_change = on_change
         self.mode = tk.StringVar(self, "week")
@@ -76,62 +76,78 @@ class CalendarView(ttk.Frame):
 
     def _build(self):
         self.columnconfigure(0, weight=1)
-        self.rowconfigure(4, weight=1, minsize=220)
+        self.rowconfigure(4, weight=1, minsize=230)
         toolbar = ttk.Frame(self)
-        toolbar.grid(row=0, column=0, sticky="ew", pady=(0, 10))
-        ttk.Label(toolbar, text="Lịch", font=ui_font(self, 19, "bold")).pack(side="left")
-        ttk.Button(toolbar, text="Thêm lịch", command=self.add_schedule).pack(side="right", padx=(6, 0))
-        ttk.Button(toolbar, text="Quản lý lịch", command=self.manage_schedules).pack(side="right")
+        toolbar.grid(row=0, column=0, sticky="ew", pady=(0, 16))
+        ttk.Label(toolbar, text="Lịch làm việc", style="Title.TLabel").pack(side="left")
+        ttk.Button(toolbar, text="Thêm lịch", style="Accent.TButton",
+                   command=self.add_schedule).pack(side="right", padx=(8, 0))
+        ttk.Button(toolbar, text="Quản lý lịch", style="Secondary.TButton",
+                   command=self.manage_schedules).pack(side="right")
+
         modebar = ttk.Frame(self)
-        modebar.grid(row=1, column=0, sticky="ew", pady=(0, 8))
+        modebar.grid(row=1, column=0, sticky="ew", pady=(0, 10))
+        modes = ttk.Frame(modebar, style="Surface.TFrame", padding=3)
+        modes.pack(side="left")
         for value, label in (("week", "Tuần"), ("month", "Tháng"), ("year", "Năm")):
-            ttk.Radiobutton(modebar, text=label, variable=self.mode, value=value,
-                            command=self._mode_changed).pack(side="left", padx=(0, 12))
-        ttk.Button(modebar, text="‹", width=3, command=lambda: self._navigate(-1)).pack(side="left", padx=(12, 3))
-        ttk.Button(modebar, text="Hôm nay", command=self._today).pack(side="left")
-        ttk.Button(modebar, text="›", width=3, command=lambda: self._navigate(1)).pack(side="left", padx=3)
-        self.period_label = ttk.Label(modebar, text="", font=ui_font(self, 11, "bold"))
-        self.period_label.pack(side="left", padx=15)
-        self.summary = ttk.Label(self, text="", wraplength=950)
-        self.summary.grid(row=2, column=0, sticky="w", pady=(0, 8))
+            ttk.Radiobutton(modes, text=label, variable=self.mode, value=value,
+                            style="Segment.TRadiobutton", command=self._mode_changed).pack(side="left")
+        navigation = ttk.Frame(modebar)
+        navigation.pack(side="right")
+        self.period_label = ttk.Label(navigation, text="", font=ui_font(self, 11, "bold"))
+        self.period_label.pack(side="left", padx=(0, 12))
+        ttk.Button(navigation, text="‹", width=3, style="Compact.TButton",
+                   command=lambda: self._navigate(-1)).pack(side="left", padx=(0, 4))
+        ttk.Button(navigation, text="Hôm nay", style="Compact.TButton", command=self._today).pack(side="left")
+        ttk.Button(navigation, text="›", width=3, style="Compact.TButton",
+                   command=lambda: self._navigate(1)).pack(side="left", padx=(4, 0))
+
+        self.summary = ttk.Label(self, text="", style="Subtitle.TLabel", wraplength=820)
+        self.summary.grid(row=2, column=0, sticky="w", pady=(0, 12))
         self.calendar_frame = ttk.Frame(self)
-        self.calendar_frame.grid(row=3, column=0, sticky="ew", pady=(0, 12))
-        daybox = ttk.LabelFrame(self, text="Các buổi trong ngày", padding=8)
+        self.calendar_frame.grid(row=3, column=0, sticky="ew", pady=(0, 14))
+
+        daybox = ttk.Frame(self, style="Surface.TFrame", padding=(16, 12))
         daybox.grid(row=4, column=0, sticky="nsew")
         daybox.columnconfigure(0, weight=1)
-        daybox.rowconfigure(1, weight=1)
-        self.day_label = ttk.Label(daybox, text="", font=ui_font(self, 11, "bold"))
-        self.day_label.grid(row=0, column=0, sticky="w", pady=(0, 6))
+        daybox.rowconfigure(1, weight=1, minsize=110)
+        day_header = ttk.Frame(daybox, style="Surface.TFrame")
+        day_header.grid(row=0, column=0, columnspan=2, sticky="ew", pady=(0, 10))
+        self.day_label = ttk.Label(day_header, text="", style="Surface.TLabel", font=ui_font(self, 12, "bold"))
+        self.day_label.pack(side="left")
+        self.day_count_label = ttk.Label(day_header, text="", style="CalendarMeta.TLabel")
+        self.day_count_label.pack(side="right")
         self.tree = ttk.Treeview(daybox, columns=("start", "end", "title", "status", "category"),
-                                 show="headings", selectmode="browse", height=7)
-        for key, label, width in (("start", "Bắt đầu", 65), ("end", "Kết thúc", 65),
-                                  ("title", "Tên lịch", 300), ("status", "Kết quả", 150),
+                                 show="headings", selectmode="browse", height=5)
+        for key, label, width in (("start", "Bắt đầu", 80), ("end", "Kết thúc", 80),
+                                  ("title", "Tên lịch", 260), ("status", "Trạng thái", 185),
                                   ("category", "Phân loại", 120)):
             self.tree.heading(key, text=label)
-            self.tree.column(key, width=width, minwidth=50, stretch=key in ("title", "category"))
+            self.tree.column(key, width=width, minwidth=65, stretch=key in ("title", "category"),
+                             anchor="w" if key not in ("start", "end") else "center")
         self.tree.grid(row=1, column=0, sticky="nsew")
         scrollbar = ttk.Scrollbar(daybox, orient="vertical", command=self.tree.yview)
         scrollbar.grid(row=1, column=1, sticky="ns")
         self.tree.configure(yscrollcommand=scrollbar.set)
-        self.tree.tag_configure("completed", foreground="#187349")
-        self.tree.tag_configure("skipped", foreground="#777777")
-        self.tree.tag_configure("overdue", foreground="#b34935")
-        self.tree.tag_configure("snoozed", foreground="#8152aa")
+        self.tree.tag_configure("completed", foreground="#16734B")
+        self.tree.tag_configure("skipped", foreground="#7B8595")
+        self.tree.tag_configure("overdue", foreground="#B64739")
+        self.tree.tag_configure("snoozed", foreground="#7857AE")
         self.tree.bind("<Double-1>", lambda _e: self.edit_selected())
         self.tree.bind("<<TreeviewSelect>>", lambda _e: self._selection_changed())
-        actions = ttk.Frame(daybox)
-        actions.grid(row=2, column=0, columnspan=2, sticky="ew", pady=(8, 0))
+        self.empty_day = ttk.Label(self.tree, text="Chưa có lịch trong ngày này.\nBấm Thêm lịch để sắp xếp thời gian.",
+                                   style="CalendarMeta.TLabel", anchor="center", justify="center")
+        actions = ttk.Frame(daybox, style="Surface.TFrame")
+        actions.grid(row=2, column=0, columnspan=2, sticky="ew", pady=(10, 0))
         self.action_buttons = []
-        for label, callback in (("Hoàn thành buổi", lambda: self._set_status("completed")),
-                                ("Bỏ qua buổi", lambda: self._set_status("skipped")),
-                                ("Mở lại buổi", lambda: self._set_status("pending")),
-                                ("Nhắc lại sau 10 phút", self._snooze),
+        for label, callback in (("Hoàn thành", lambda: self._set_status("completed")),
+                                ("Bỏ qua", lambda: self._set_status("skipped")),
+                                ("Mở lại", lambda: self._set_status("pending")),
+                                ("Nhắc sau 10 phút", self._snooze),
                                 ("Sửa lịch gốc", self.edit_selected)):
-            button = ttk.Button(actions, text=label, command=callback)
-            button.pack(side="left", padx=(0, 5))
+            button = ttk.Button(actions, text=label, style="Compact.TButton", command=callback)
+            button.pack(side="left", padx=(0, 6))
             self.action_buttons.append(button)
-        ttk.Label(self, text="Kết quả được lưu riêng từng buổi. Số giờ là thời lượng đã lên lịch, không phải thời gian làm thực tế.",
-                  wraplength=1000, foreground="#65736a").grid(row=5, column=0, sticky="w", pady=(8, 0))
 
     def _period_range(self):
         if self.mode.get() == "week":
@@ -207,56 +223,55 @@ class CalendarView(ttk.Frame):
         else:
             self._draw_year()
 
+    def _day_style(self, value):
+        if value == self.selected_date:
+            return "Selected.Day.TButton"
+        return "Today.Day.TButton" if value == date.today() else "Day.TButton"
+
     def _draw_week(self):
         first, _ = self._range
         for col in range(7):
             self.calendar_frame.columnconfigure(col, weight=1, uniform="week")
             day = first + timedelta(days=col)
-            frame = ttk.Frame(self.calendar_frame, relief="groove", borderwidth=1, padding=5)
-            frame.grid(row=0, column=col, sticky="nsew", padx=2)
-            button = ttk.Button(frame, text=f"{WEEKDAYS[col]}\n{day:%d/%m}",
+            frame = ttk.Frame(self.calendar_frame, style="Surface.TFrame", padding=(8, 9))
+            frame.grid(row=0, column=col, sticky="nsew", padx=(0 if col == 0 else 3, 0 if col == 6 else 3))
+            button = ttk.Button(frame, text=f"{WEEKDAYS[col]}\n{day:%d/%m}", style=self._day_style(day),
                                 command=lambda value=day: self.show_day(value))
-            button.pack(fill="x", pady=(0, 5))
-            if day == self.selected_date:
-                button.state(["pressed"])
+            button.pack(fill="x", pady=(0, 6))
             occurrences = self._by_day.get(day, [])
             if not occurrences:
-                ttk.Label(frame, text="Chưa có lịch", foreground="#87918a", wraplength=110).pack(anchor="w", pady=5)
-            for occurrence in occurrences[:3]:
-                symbol = "✓" if occurrence.status == "completed" else "–" if occurrence.status == "skipped" else "•"
-                title = occurrence.title if len(occurrence.title) <= 30 else occurrence.title[:29] + "…"
-                label = ttk.Label(frame, text=f"{symbol} {occurrence.start:%H:%M}\n{title}", wraplength=120,
-                                  cursor="hand2", foreground="#187349" if occurrence.status == "completed" else "#33473c")
+                ttk.Label(frame, text="Trống", style="CalendarMeta.TLabel").pack(anchor="w", pady=(6, 3))
+            for occurrence in occurrences[:2]:
+                title = occurrence.title if len(occurrence.title) <= 18 else occurrence.title[:17] + "…"
+                label = ttk.Label(frame, text=f"{occurrence.start:%H:%M}  {title}",
+                                  style="CalendarMeta.TLabel", wraplength=90, cursor="hand2",
+                                  foreground="#16734B" if occurrence.status == "completed" else "#465775")
                 label.pack(anchor="w", fill="x", pady=3)
                 label.bind("<Button-1>", lambda _event, value=day: self.show_day(value))
-            if len(occurrences) > 3:
-                ttk.Label(frame, text=f"+ {len(occurrences) - 3} buổi khác", foreground="#65736a").pack(anchor="w")
+            if len(occurrences) > 2:
+                label = ttk.Label(frame, text=f"+ {len(occurrences) - 2} buổi", style="CalendarMeta.TLabel", cursor="hand2", wraplength=90)
+                label.pack(anchor="w", pady=(3, 0))
+                label.bind("<Button-1>", lambda _event, value=day: self.show_day(value))
 
     def _draw_month(self):
         year, month = self.anchor.year, self.anchor.month
         for col, label in enumerate(WEEKDAYS):
             self.calendar_frame.columnconfigure(col, weight=1, uniform="month")
-            ttk.Label(self.calendar_frame, text=label, anchor="center").grid(row=0, column=col, sticky="ew", pady=(0, 3))
+            ttk.Label(self.calendar_frame, text=label, anchor="center", style="Subtitle.TLabel").grid(
+                row=0, column=col, sticky="ew", pady=(0, 5))
         for row, week in enumerate(calendar.Calendar(firstweekday=0).monthdayscalendar(year, month), 1):
             for col, day in enumerate(week):
                 if not day:
-                    ttk.Label(self.calendar_frame, text="").grid(row=row, column=col)
                     continue
                 value = date(year, month, day)
                 count = len(self._by_day.get(value, []))
-                label = f"{day:02d}" + (f" · {count} buổi" if count else "")
-                if value == date.today():
-                    label = "Hôm nay · " + label
-                button = ttk.Button(self.calendar_frame, text=label,
+                label = f"{day:02d}" + (f"   · {count}" if count else "")
+                button = ttk.Button(self.calendar_frame, text=label, style=self._day_style(value),
                                     command=lambda d=value: self.show_day(d))
-                button.grid(row=row, column=col, sticky="nsew", padx=2, pady=2, ipady=5)
-                if value == self.selected_date:
-                    button.state(["pressed"])
+                button.grid(row=row, column=col, sticky="nsew", padx=2, pady=2)
 
     def _draw_year(self):
-        # Keep the daily results usable on a 720px Windows desktop. Full mini
-        # calendars consume most of the window; each tile opens the month grid.
-        ttk.Style(self).configure("YearMonth.TButton", font=ui_font(self, 10), padding=(10, 8))
+        # Two readable lines preserve room for the selected day's results.
         for col in range(4):
             self.calendar_frame.columnconfigure(col, weight=1, uniform="year")
         for month in range(1, 13):
@@ -265,9 +280,9 @@ class CalendarView(ttk.Frame):
             dates = ", ".join(f"{day:02d}" for day in days[:4])
             if len(days) > 4:
                 dates += "…"
-            detail = "Ngày: " + dates if dates else "Xem lịch tháng"
-            text = f"Tháng {month:02d}\n{count} buổi\n{detail}"
-            button = ttk.Button(self.calendar_frame, text=text, style="YearMonth.TButton",
+            detail = "Ngày " + dates if dates else "Chưa có lịch"
+            text = f"Tháng {month:02d}    ·    {count} buổi\n{detail}"
+            button = ttk.Button(self.calendar_frame, text=text, style="Month.TButton",
                                 command=lambda m=month: self._open_month(m))
             button.grid(row=(month - 1) // 4, column=(month - 1) % 4, sticky="nsew", padx=3, pady=3)
 
@@ -281,7 +296,12 @@ class CalendarView(ttk.Frame):
         self._selected_occurrences = {}
         now = datetime.now()
         values = sorted(self._by_day.get(self.selected_date, []), key=lambda item: (item.start, item.title))
-        self.day_label.configure(text=f"{WEEKDAYS[self.selected_date.weekday()]}, {format_date(self.selected_date)} · {len(values)} buổi")
+        self.day_label.configure(text=f"{WEEKDAYS[self.selected_date.weekday()]}, {format_date(self.selected_date)}")
+        self.day_count_label.configure(text=f"{len(values)} buổi" if values else "Chưa có lịch trong ngày")
+        if values:
+            self.empty_day.place_forget()
+        else:
+            self.empty_day.place(relx=0.5, rely=0.62, anchor="center")
         for index, occurrence in enumerate(values):
             key = str(index)
             self._selected_occurrences[key] = occurrence
@@ -365,12 +385,19 @@ class ScheduleEditor(tk.Toplevel):
         self.store, self.schedule, self.on_saved = store, schedule, on_saved
         self.title("Sửa lịch gốc" if schedule.id is not None else "Thêm lịch")
         self.transient(parent)
-        self.geometry(f"650x{min(820, max(500, self.winfo_screenheight() - 100))}")
-        self.minsize(520, 440)
+        self.configure(background="#F4F6FA")
+        self.geometry(f"720x{min(860, max(540, self.winfo_screenheight() - 90))}")
+        self.minsize(620, 480)
         self.rowconfigure(1, weight=1)
         self.columnconfigure(0, weight=1)
         note = "Chỉnh sửa áp dụng cho các buổi sắp tới; các buổi đã bắt đầu hoặc xác nhận vẫn được giữ." if schedule.id is not None else "Chọn cách lặp. Lịch tháng/năm lấy ngày bắt đầu làm mốc lặp."
-        ttk.Label(self, text=note, wraplength=600, padding=12, foreground="#5a6c60").grid(row=0, column=0, sticky="ew")
+        header = ttk.Frame(self, padding=(24, 20, 24, 16))
+        header.grid(row=0, column=0, sticky="ew")
+        ttk.Label(header, text="Chỉnh sửa lịch" if schedule.id is not None else "Tạo lịch mới",
+                  style="Title.TLabel").pack(anchor="w")
+        note_label = ttk.Label(header, text=note, wraplength=640, style="Subtitle.TLabel")
+        note_label.pack(anchor="w", pady=(5, 0))
+        header.bind("<Configure>", lambda event: note_label.configure(wraplength=max(260, event.width - 48)))
         scroll = ScrollableForm(self)
         scroll.grid(row=1, column=0, sticky="nsew")
         form = scroll.content
@@ -388,15 +415,24 @@ class ScheduleEditor(tk.Toplevel):
         self.weekday_buttons = []
         row = 0
 
-        def field(label, widget):
+        def section(title):
             nonlocal row
-            ttk.Label(form, text=label).grid(row=row, column=0, sticky="nw", padx=(0, 12), pady=6)
-            widget.grid(row=row, column=1, sticky="ew", pady=5)
+            ttk.Label(form, text=title, style="Section.TLabel").grid(
+                row=row, column=0, columnspan=2, sticky="w", pady=(16 if row else 2, 9))
             row += 1
 
+        def field(label, widget):
+            nonlocal row
+            ttk.Label(form, text=label, style="Subtitle.TLabel").grid(
+                row=row, column=0, sticky="nw", padx=(0, 20), pady=(9, 6))
+            widget.grid(row=row, column=1, sticky="ew", pady=6)
+            row += 1
+
+        section("Thông tin lịch")
         self.title_entry = ttk.Entry(form, textvariable=self.title_var)
         field("Tên lịch *", self.title_entry)
         field("Phân loại", ttk.Entry(form, textvariable=self.category_var))
+        section("Thời gian và chu kỳ")
         recurrence_combo = ttk.Combobox(form, textvariable=self.recurrence_var, state="readonly", values=list(RECURRENCE_LABELS.values()))
         field("Cách lặp", recurrence_combo)
         recurrence_combo.bind("<<ComboboxSelected>>", lambda _e: self._recurrence_changed())
@@ -419,20 +455,26 @@ class ScheduleEditor(tk.Toplevel):
         self.policy_combo = ttk.Combobox(form, textvariable=self.policy_var, state="readonly",
                                          values=("Ngày cuối tháng", "Bỏ qua lần thiếu ngày"))
         field("Tháng thiếu ngày", self.policy_combo)
-        self.rule_note = ttk.Label(form, text="", wraplength=410, foreground="#65736a")
+        self.rule_note = ttk.Label(form, text="", wraplength=420, style="Subtitle.TLabel")
         field("", self.rule_note)
+        section("Nhắc việc")
         minutes = ttk.Spinbox(form, from_=0, to=120, textvariable=self.minutes_var, width=8)
         field("Nhắc trước (phút)", minutes)
         field("Nhắc trước (ngày)", ttk.Entry(form, textvariable=self.days_var))
-        field("", ttk.Label(form, text="Ví dụ 7, 1 = trước 7 ngày và 1 ngày. Để trống nếu không dùng.\nMốc phút 0: chỉ nhắc lúc bắt đầu. Các mốc ngày dùng giờ bắt đầu.", wraplength=410, foreground="#65736a"))
-        self.content = tk.Text(form, height=5, wrap="word", font=ui_font(self), relief="solid", borderwidth=1)
+        field("", ttk.Label(form, text="Ví dụ 7, 1: nhắc trước 7 ngày và 1 ngày. Để trống nếu không dùng.\nĐặt 0 phút để chỉ nhắc lúc bắt đầu.", wraplength=420, style="Subtitle.TLabel"))
+        section("Nội dung và áp dụng")
+        self.content = tk.Text(form, height=5, wrap="word", font=ui_font(self, 11),
+                               background="white", foreground="#17243B", insertbackground="#315EFB",
+                               relief="flat", borderwidth=0, highlightthickness=1,
+                               highlightbackground="#E3E8F0", highlightcolor="#315EFB", padx=10, pady=9)
         self.content.insert("1.0", schedule.content)
         field("Nội dung / mục tiêu", self.content)
         field("", ttk.Checkbutton(form, text="Đang áp dụng lịch này", variable=self.enabled_var))
-        footer = ttk.Frame(self, padding=12)
+        footer = ttk.Frame(self, style="Surface.TFrame", padding=(24, 14))
         footer.grid(row=2, column=0, sticky="ew")
-        ttk.Button(footer, text="Hủy", command=self._close).pack(side="right", padx=(6, 0))
-        ttk.Button(footer, text="Lưu lịch", command=self._save).pack(side="right")
+        ttk.Label(footer, text="Ctrl + Enter để lưu", style="CalendarMeta.TLabel").pack(side="left")
+        ttk.Button(footer, text="Lưu lịch", style="Accent.TButton", command=self._save).pack(side="right")
+        ttk.Button(footer, text="Hủy", style="Secondary.TButton", command=self._close).pack(side="right", padx=(0, 8))
         self.bind("<Control-Return>", lambda _e: self._save())
         self.bind("<Escape>", lambda _e: self._close())
         self.protocol("WM_DELETE_WINDOW", self._close)
@@ -544,13 +586,19 @@ class ScheduleManager(tk.Toplevel):
         self.store, self.on_changed = store, on_changed
         self.title("Quản lý lịch gốc")
         self.transient(parent)
-        self.geometry("850x460")
-        self.minsize(640, 350)
+        self.configure(background="#F4F6FA")
+        self.geometry("940x540")
+        self.minsize(780, 430)
         self.columnconfigure(0, weight=1)
         self.rowconfigure(1, weight=1)
-        ttk.Label(self, text="Sửa lịch gốc áp dụng cho các buổi sắp tới. Tạm dừng không tạo buổi mới trong thời gian dừng; lịch sử vẫn được giữ.",
-                  wraplength=800, padding=12).grid(row=0, column=0, sticky="ew")
-        frame = ttk.Frame(self, padding=(12, 0))
+        header = ttk.Frame(self, padding=(24, 20, 24, 16))
+        header.grid(row=0, column=0, sticky="ew")
+        ttk.Label(header, text="Quản lý lịch", style="Title.TLabel").pack(anchor="w")
+        note_label = ttk.Label(header, text="Chỉnh lịch cho các buổi sắp tới. Tạm dừng vẫn giữ nguyên lịch sử.",
+                               style="Subtitle.TLabel", wraplength=830)
+        note_label.pack(anchor="w", pady=(5, 0))
+        header.bind("<Configure>", lambda event: note_label.configure(wraplength=max(260, event.width - 48)))
+        frame = ttk.Frame(self, padding=(24, 0, 24, 16))
         frame.grid(row=1, column=0, sticky="nsew")
         frame.columnconfigure(0, weight=1)
         frame.rowconfigure(0, weight=1)
@@ -564,12 +612,12 @@ class ScheduleManager(tk.Toplevel):
         bar.grid(row=0, column=1, sticky="ns")
         self.tree.configure(yscrollcommand=bar.set)
         self.tree.bind("<Double-1>", lambda _e: self._edit())
-        buttons = ttk.Frame(self, padding=12)
+        buttons = ttk.Frame(self, style="Surface.TFrame", padding=(24, 14))
         buttons.grid(row=2, column=0, sticky="ew")
-        ttk.Button(buttons, text="Thêm lịch", command=self._add).pack(side="left", padx=(0, 6))
-        ttk.Button(buttons, text="Sửa lịch", command=self._edit).pack(side="left", padx=(0, 6))
-        ttk.Button(buttons, text="Tạm dừng / Bật lại", command=self._toggle).pack(side="left")
-        ttk.Button(buttons, text="Đóng", command=self._close).pack(side="right")
+        ttk.Button(buttons, text="Thêm lịch", style="Accent.TButton", command=self._add).pack(side="left", padx=(0, 8))
+        ttk.Button(buttons, text="Sửa lịch", style="Secondary.TButton", command=self._edit).pack(side="left", padx=(0, 8))
+        ttk.Button(buttons, text="Tạm dừng / Bật lại", style="Secondary.TButton", command=self._toggle).pack(side="left")
+        ttk.Button(buttons, text="Đóng", style="Secondary.TButton", command=self._close).pack(side="right")
         self.protocol("WM_DELETE_WINDOW", self._close)
         self.bind("<Escape>", lambda _event: self._close())
         self.refresh()

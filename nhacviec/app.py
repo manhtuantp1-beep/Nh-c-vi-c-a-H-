@@ -1,8 +1,7 @@
 """Vietnamese desktop workflow for tasks, recurrence, notifications and backups."""
 from __future__ import annotations
 
-import calendar
-from datetime import date, datetime, timedelta
+from datetime import datetime
 import logging
 from pathlib import Path
 import tkinter as tk
@@ -13,377 +12,13 @@ import traceback
 
 from . import __version__
 from .calendar_ui import CalendarView, close_schedule_editors
-from .excel import export_workbook
-from .models import Task
 from .platform_support import PlatformSupport
 from .reminders import ReminderEngine
-from .widgets import DateEntry, parse_time, ui_font
+from .widgets import ui_font
 
-GREEN = "#08775b"
-BG = "#f4f7f5"
-INK = "#24352d"
-MUTED = "#64776b"
-STATUS_LABELS = {"todo": "Cần làm", "in_progress": "Đang thực hiện", "completed": "Đã hoàn thành", "canceled": "Đã hủy"}
-ALL_FILTER = "Tất cả việc chưa hoàn thành"
-TODO_FILTER = "Chưa bắt đầu"
-
-
-def configure_style(root: tk.Tk) -> None:
-    style = ttk.Style(root)
-    style.theme_use("clam")
-    family = ui_font(root)[0]
-    for name in ("TkDefaultFont", "TkTextFont", "TkMenuFont", "TkHeadingFont", "TkCaptionFont", "TkSmallCaptionFont", "TkIconFont", "TkTooltipFont"):
-        tkfont.nametofont(name, root=root).configure(family=family, size=10)
-    style.configure("TFrame", background=BG)
-    style.configure("TLabel", background=BG, foreground=INK, font=ui_font(root, 10))
-    style.configure("Title.TLabel", font=ui_font(root, 23, "bold"))
-    style.configure("Subtitle.TLabel", foreground=MUTED)
-    style.configure("Accent.TButton", background=GREEN, foreground="white", padding=(14, 9))
-    style.map("Accent.TButton", background=[("active", "#0d8c6b")])
-    style.configure("TButton", padding=(10, 7), font=ui_font(root, 10))
-    style.configure("Side.TFrame", background="white")
-    style.configure("Side.TLabel", background="white", foreground=GREEN, font=ui_font(root, 15, "bold"))
-    style.configure("Nav.TButton", anchor="w", padding=(12, 6))
-    style.configure("Card.TFrame", background="white", relief="solid", borderwidth=1)
-    style.configure("Card.TLabel", background="white", foreground=INK)
-    style.configure("CardTitle.TLabel", background="white", foreground=INK, font=ui_font(root, 12, "bold"))
-    style.configure("CardMeta.TLabel", background="white", foreground=MUTED, font=ui_font(root, 9))
-    style.configure("CardStatus.TLabel", background="white", foreground=GREEN, font=ui_font(root, 9, "bold"))
-    style.configure("Late.TLabel", background="white", foreground="#b04c24", font=ui_font(root, 9, "bold"))
-    style.configure("TLabelframe", background=BG)
-    style.configure("TLabelframe.Label", background=BG, foreground=GREEN)
-    style.configure("Treeview", rowheight=28, font=ui_font(root, 10))
-    style.configure("Treeview.Heading", font=ui_font(root, 10, "bold"))
-
-
-class TaskListPage(ttk.Frame):
-    """Each status page retains its own search, ordering and date range."""
-
-    def __init__(self, parent, app, view: str):
-        super().__init__(parent, padding=24)
-        self.app, self.view = app, view
-        self.visible_tasks: list[Task] = []
-        self.cards_by_id = {}
-        self._columns = 0
-        self._resize_job = None
-        heading = {"active": "Cần làm", "in_progress": "Đang thực hiện", "due": "Sắp đến hạn", "completed": "Đã hoàn thành", "canceled": "Đã hủy"}[view]
-        ttk.Label(self, text=heading, style="Title.TLabel").pack(anchor="w")
-        ttk.Label(self, text="Theo dõi công việc theo trạng thái, deadline và nội dung.", style="Subtitle.TLabel").pack(anchor="w", pady=(5, 18))
-        controls = ttk.Frame(self)
-        controls.pack(fill="x")
-        self.filter_var = tk.StringVar(value=ALL_FILTER)
-        if view == "active":
-            self.filter_combo = ttk.Combobox(controls, state="readonly", textvariable=self.filter_var, values=(ALL_FILTER, TODO_FILTER), width=33)
-            self.filter_combo.pack(side="left", padx=(0, 12))
-            self.filter_combo.bind("<<ComboboxSelected>>", lambda _e: self.refresh())
-        self.query_var = tk.StringVar()
-        ttk.Label(controls, text="Tìm tên / mã:").pack(side="left")
-        search = ttk.Entry(controls, textvariable=self.query_var, width=28)
-        search.pack(side="left", padx=7, fill="x", expand=True)
-        search.bind("<Return>", lambda _e: self.apply_filters())
-        ttk.Button(controls, text="Tạo công việc", style="Accent.TButton", command=self.app.new_task).pack(side="right", padx=(12, 0))
-        self.hint = ttk.Label(self, style="Subtitle.TLabel", wraplength=900)
-        self.hint.pack(anchor="w", pady=(10, 15))
-        dates = ttk.Frame(self)
-        dates.pack(fill="x")
-        ttk.Label(dates, text="Theo:").pack(side="left")
-        self.sort_var = tk.StringVar(value="Deadline")
-        ttk.Combobox(dates, state="readonly", textvariable=self.sort_var, values=("Deadline", "Ngày tạo"), width=11).pack(side="left", padx=6)
-        self.descending = tk.BooleanVar(value=False)
-        ttk.Checkbutton(dates, text="Giảm dần", variable=self.descending).pack(side="left", padx=(2, 14))
-        ttk.Label(dates, text="Từ:").pack(side="left")
-        self.date_from = DateEntry(dates, value=None, allow_empty=True)
-        self.date_from.pack(side="left", padx=5)
-        ttk.Label(dates, text="Đến:").pack(side="left")
-        self.date_to = DateEntry(dates, value=None, allow_empty=True)
-        self.date_to.pack(side="left", padx=5)
-        ttk.Button(dates, text="Lọc", command=self.apply_filters).pack(side="left", padx=6)
-        ttk.Button(dates, text="Xóa lọc", command=self.clear_filters).pack(side="left")
-        self.count_label = ttk.Label(self)
-        self.count_label.pack(anchor="w", pady=(19, 10))
-        body = ttk.Frame(self)
-        body.pack(fill="both", expand=True)
-        self.canvas = tk.Canvas(body, background=BG, highlightthickness=0)
-        scroll = ttk.Scrollbar(body, orient="vertical", command=self.canvas.yview)
-        self.canvas.configure(yscrollcommand=scroll.set)
-        self.canvas.pack(side="left", fill="both", expand=True)
-        scroll.pack(side="right", fill="y")
-        self.card_container = ttk.Frame(self.canvas)
-        self._canvas_window = self.canvas.create_window((0, 0), window=self.card_container, anchor="nw")
-        self.card_container.bind("<Configure>", lambda _e: self.canvas.configure(scrollregion=self.canvas.bbox("all")))
-        self.canvas.bind("<Configure>", self._resize)
-        # Bind locally, rather than replacing wheel behavior in calendar/forms.
-        self.canvas.bind("<MouseWheel>", self._wheel)
-        self.canvas.bind("<Button-4>", lambda _e: self.canvas.yview_scroll(-3, "units"))
-        self.canvas.bind("<Button-5>", lambda _e: self.canvas.yview_scroll(3, "units"))
-        self.refresh()
-
-    def _wheel(self, event):
-        self.canvas.yview_scroll(-int(event.delta / 120) if abs(event.delta) >= 120 else (-1 if event.delta > 0 else 1), "units")
-        return "break"
-
-    def _bind_card_wheel(self, widget):
-        widget.bind("<MouseWheel>", self._wheel)
-        widget.bind("<Button-4>", lambda _e: self.canvas.yview_scroll(-3, "units"))
-        widget.bind("<Button-5>", lambda _e: self.canvas.yview_scroll(3, "units"))
-        for child in widget.winfo_children():
-            self._bind_card_wheel(child)
-
-    def _resize(self, event):
-        self.canvas.itemconfigure(self._canvas_window, width=event.width)
-        columns = max(1, min(3, event.width // 365))
-        if columns != self._columns:
-            self._columns = columns
-            if self._resize_job:
-                self.after_cancel(self._resize_job)
-            self._resize_job = self.after_idle(self._render_cards)
-
-    def apply_filters(self):
-        try:
-            self.refresh()
-        except ValueError as exc:
-            messagebox.showerror("Bộ lọc chưa hợp lệ", str(exc), parent=self)
-
-    def clear_filters(self):
-        self.query_var.set("")
-        self.sort_var.set("Deadline")
-        self.descending.set(False)
-        self.date_from.set_date(None)
-        self.date_to.set_date(None)
-        self.refresh()
-
-    def refresh(self):
-        start, end = self.date_from.get_date(), self.date_to.get_date()
-        if start and end and start > end:
-            raise ValueError("Ngày bắt đầu lọc phải trước hoặc bằng ngày kết thúc.")
-        status = "active" if self.view in ("active", "due") else self.view
-        if self.view == "active" and self.filter_var.get() == TODO_FILTER:
-            status = "todo"
-        tasks = self.app.store.list_tasks(status=status, query=self.query_var.get(), date_from=start, date_to=end,
-                                          sort_by="deadline" if self.sort_var.get() == "Deadline" else "created_at", descending=self.descending.get())
-        if self.view == "due":
-            cutoff = date.today() + timedelta(days=self.app.store.get_settings()["days_before"])
-            tasks = [t for t in tasks if t.deadline.date() <= cutoff]
-        self.visible_tasks = tasks
-        self.count_label.configure(text=f"{len(tasks)} công việc phù hợp")
-        if self.view == "active":
-            text = ("Gồm việc mới, chờ xử lý, đang thực hiện, tạm dừng và quá hạn. Việc hoàn thành/hủy ở mục riêng."
-                    if self.filter_var.get() == ALL_FILTER else
-                    "Nhóm Cần làm hiện tại: gồm cả việc tạm dừng hoặc mở lại; không gồm việc đang thực hiện.")
-        elif self.view == "due":
-            text = "Các việc chưa hoàn thành trong khoảng ngày nhắc đã chọn, bao gồm việc quá hạn."
-        else:
-            text = "Bấm Chi tiết để xem, chỉnh sửa hoặc thay đổi trạng thái công việc."
-        self.hint.configure(text=text)
-        self._render_cards()
-
-    def _render_cards(self):
-        self._resize_job = None
-        for child in self.card_container.winfo_children():
-            child.destroy()
-        self.cards_by_id = {}
-        for index in range(3):
-            self.card_container.columnconfigure(index, weight=1 if index < max(self._columns, 1) else 0)
-        if not self.visible_tasks:
-            ttk.Label(self.card_container, text="Chưa có công việc phù hợp. Anh có thể tạo công việc mới hoặc xóa bộ lọc.", padding=24).grid(row=0, column=0, sticky="w")
-            return
-        for index, task in enumerate(self.visible_tasks):
-            card = ttk.Frame(self.card_container, style="Card.TFrame", padding=17)
-            card.grid(row=index // max(self._columns, 1), column=index % max(self._columns, 1), sticky="nsew", padx=(0, 12), pady=(0, 12))
-            self.cards_by_id[task.id] = card
-            ttk.Label(card, text=STATUS_LABELS[task.status].upper(), style="CardStatus.TLabel").pack(anchor="w")
-            title = task.title if len(task.title) <= 82 else task.title[:79] + "…"
-            ttk.Label(card, text=title, style="CardTitle.TLabel", wraplength=310).pack(anchor="w", fill="x", pady=(9, 5))
-            ttk.Label(card, text=f"Mã: {task.code}", style="CardMeta.TLabel").pack(anchor="w")
-            ttk.Label(card, text=task.category or "Chưa phân loại", style="CardMeta.TLabel").pack(anchor="w", pady=(4, 8))
-            content = task.content.replace("\n", " ")
-            if len(content) > 105:
-                content = content[:102] + "…"
-            ttk.Label(card, text=content or "Chưa có nội dung chi tiết.", style="CardMeta.TLabel", wraplength=310).pack(anchor="w", fill="x", pady=(0, 10))
-            late = task.status in ("todo", "in_progress") and task.deadline < datetime.now()
-            ttk.Label(card, text=task.deadline.strftime("Deadline: %d/%m/%Y · %H:%M") + (" · QUÁ HẠN" if late else ""),
-                      style="Late.TLabel" if late else "CardMeta.TLabel").pack(anchor="w")
-            if task.reason:
-                ttk.Label(card, text=task.reason, style="CardMeta.TLabel", wraplength=310).pack(anchor="w", pady=(5, 0))
-            actions = ttk.Frame(card, style="Card.TFrame")
-            actions.pack(fill="x", pady=(14, 0))
-            ttk.Button(actions, text="Chi tiết", command=lambda t=task: self.app.edit_task(t.id)).pack(side="left")
-            if task.status == "todo":
-                ttk.Button(actions, text="Bắt đầu", command=lambda t=task: self.app.transition_task(t.id, "in_progress")).pack(side="right", padx=(4, 0))
-            if task.status in ("todo", "in_progress"):
-                ttk.Button(actions, text="Hoàn thành", command=lambda t=task: self.app.transition_task(t.id, "completed")).pack(side="right", padx=(4, 0))
-            else:
-                ttk.Button(actions, text="Mở lại", command=lambda t=task: self.app.transition_task(t.id, "todo", "Đã mở lại")).pack(side="right")
-            self._bind_card_wheel(card)
-
-
-class TaskDialog(tk.Toplevel):
-    def __init__(self, app, task: Task | None = None):
-        super().__init__(app.root)
-        self.app, self.task = app, task
-        self.title("Chi tiết công việc" if task else "Tạo công việc / ghi nhớ mới")
-        self.geometry("770x740")
-        self.minsize(640, 620)
-        self.transient(app.root)
-        self.protocol("WM_DELETE_WINDOW", self.cancel)
-        self.columnconfigure(0, weight=1)
-        frame = ttk.Frame(self, padding=23)
-        frame.grid(sticky="nsew")
-        self.rowconfigure(0, weight=1)
-        frame.columnconfigure(1, weight=1)
-        self.title_var = tk.StringVar(value=task.title if task else "")
-        self.category_var = tk.StringVar(value=task.category if task else "")
-        deadline = task.deadline if task else datetime.now().replace(hour=17, minute=0, second=0, microsecond=0)
-        self.time_var = tk.StringVar(value=deadline.strftime("%H:%M"))
-        ttk.Label(frame, text="Chi tiết công việc" if task else "Tạo công việc", font=ui_font(self, 18, "bold")).grid(row=0, column=0, columnspan=2, sticky="w", pady=(0, 17))
-        ttk.Label(frame, text="Tên công việc *").grid(row=1, column=0, sticky="w", padx=(0, 15))
-        title_entry = ttk.Entry(frame, textvariable=self.title_var)
-        title_entry.grid(row=1, column=1, sticky="ew", pady=7)
-        ttk.Label(frame, text="Deadline *").grid(row=2, column=0, sticky="w")
-        when = ttk.Frame(frame)
-        when.grid(row=2, column=1, sticky="w", pady=7)
-        self.date_entry = DateEntry(when, value=deadline.date())
-        self.date_entry.pack(side="left")
-        ttk.Label(when, text="Giờ:").pack(side="left", padx=(12, 5))
-        ttk.Entry(when, textvariable=self.time_var, width=8).pack(side="left")
-        ttk.Label(when, text="hh:mm", style="Subtitle.TLabel").pack(side="left", padx=6)
-        ttk.Label(frame, text="Phân loại").grid(row=3, column=0, sticky="w")
-        categories = sorted({t.category for t in app.store.list_tasks() if t.category})
-        ttk.Combobox(frame, textvariable=self.category_var, values=categories).grid(row=3, column=1, sticky="ew", pady=7)
-        ttk.Label(frame, text="Nội dung").grid(row=4, column=0, sticky="nw", pady=8)
-        self.content_text = ScrolledText(frame, height=7, wrap="word", relief="solid", borderwidth=1)
-        self.content_text.grid(row=4, column=1, sticky="nsew", pady=7)
-        ttk.Label(frame, text="Yêu cầu").grid(row=5, column=0, sticky="nw", pady=8)
-        self.requirements_text = ScrolledText(frame, height=5, wrap="word", relief="solid", borderwidth=1)
-        self.requirements_text.grid(row=5, column=1, sticky="nsew", pady=7)
-        frame.rowconfigure(4, weight=1)
-        frame.rowconfigure(5, weight=1)
-        if task:
-            self.content_text.insert("1.0", task.content)
-            self.requirements_text.insert("1.0", task.requirements)
-            ttk.Label(frame, text=f"{task.code} · {STATUS_LABELS[task.status]}", style="Subtitle.TLabel").grid(row=6, column=0, columnspan=2, sticky="w", pady=10)
-        buttons = ttk.Frame(frame)
-        buttons.grid(row=7, column=0, columnspan=2, sticky="ew", pady=(15, 0))
-        if task and task.status == "in_progress":
-            ttk.Button(buttons, text="Tạm dừng", command=lambda: self.change_status("todo", "Tạm dừng")).pack(side="left", padx=(0, 7))
-        if task and task.status in ("todo", "in_progress"):
-            ttk.Button(buttons, text="Hủy việc", command=lambda: self.change_status("canceled")).pack(side="left")
-        elif task:
-            ttk.Button(buttons, text="Mở lại", command=lambda: self.change_status("todo", "Đã mở lại")).pack(side="left")
-        ttk.Button(buttons, text="Lưu công việc", style="Accent.TButton", command=self.save).pack(side="right")
-        ttk.Button(buttons, text="Đóng", command=self.cancel).pack(side="right", padx=9)
-        self._initial = self.snapshot()
-        self.bind("<Control-s>", lambda _e: self.save())
-        self.bind("<Escape>", lambda _e: self.cancel())
-        title_entry.focus_set()
-        self.grab_set()
-
-    def snapshot(self):
-        return (self.title_var.get(), self.category_var.get(), self.time_var.get(),
-                self.date_entry.get(), self.content_text.get("1.0", "end-1c"), self.requirements_text.get("1.0", "end-1c"))
-
-    def cancel(self):
-        if self.snapshot() != self._initial and not messagebox.askyesno("Chưa lưu thay đổi", "Đóng biểu mẫu và bỏ những thay đổi chưa lưu?", parent=self):
-            return
-        self.destroy()
-
-    def save(self):
-        try:
-            when = self.date_entry.get_date()
-            if when is None:
-                raise ValueError("Anh cần chọn ngày deadline.")
-            fields = dict(title=self.title_var.get(), deadline=datetime.combine(when, parse_time(self.time_var.get())),
-                          category=self.category_var.get(), content=self.content_text.get("1.0", "end-1c"),
-                          requirements=self.requirements_text.get("1.0", "end-1c"))
-            if self.task:
-                self.app.store.update_task(self.task.id, **fields)
-            else:
-                self.app.store.create_task(**fields)
-        except (ValueError, OSError) as exc:
-            messagebox.showerror("Chưa lưu được công việc", str(exc), parent=self)
-            return
-        self.destroy()
-        self.app.refresh_current()
-
-    def change_status(self, status, reason=""):
-        if self.snapshot() != self._initial:
-            messagebox.showinfo("Cần lưu nội dung", "Anh lưu thay đổi trước khi chuyển trạng thái công việc.", parent=self)
-            return
-        if status == "canceled" and not messagebox.askyesno("Hủy công việc", "Chuyển công việc vào Đã hủy? Dữ liệu vẫn được giữ lại.", parent=self):
-            return
-        self.app.transition_task(self.task.id, status, reason)
-        self.destroy()
-
-
-class SettingsDialog(tk.Toplevel):
-    def __init__(self, app):
-        super().__init__(app.root)
-        self.app = app
-        self.title("Cài đặt nhắc việc")
-        self.transient(app.root)
-        frame = ttk.Frame(self, padding=26)
-        frame.pack(fill="both", expand=True)
-        settings = app.store.get_settings()
-        ttk.Label(frame, text="Nhắc công việc hằng ngày", font=ui_font(self, 16, "bold")).grid(row=0, column=0, columnspan=2, sticky="w", pady=(0, 18))
-        self.days = tk.StringVar(value=str(settings["days_before"]))
-        self.at_time = tk.StringVar(value=settings["daily_time"])
-        self.enabled = tk.BooleanVar(value=settings["notifications_enabled"])
-        ttk.Label(frame, text="Số ngày trước deadline (1–30):").grid(row=1, column=0, sticky="w", padx=(0, 15), pady=9)
-        ttk.Spinbox(frame, from_=1, to=30, textvariable=self.days, width=7).grid(row=1, column=1, sticky="w")
-        ttk.Label(frame, text="Giờ nhắc hằng ngày (hh:mm):").grid(row=2, column=0, sticky="w", pady=9)
-        ttk.Entry(frame, textvariable=self.at_time, width=9).grid(row=2, column=1, sticky="w")
-        ttk.Checkbutton(frame, text="Bật nhắc việc và nhắc lịch", variable=self.enabled).grid(row=3, column=0, columnspan=2, sticky="w", pady=12)
-        ttk.Label(frame, text="Lịch có mốc nhắc riêng theo phút và ngày.\nMáy cần đang bật, thức và ứng dụng đang chạy.\nGiờ nhắc dùng giờ địa phương trên máy.", style="Subtitle.TLabel").grid(row=4, column=0, columnspan=2, sticky="w", pady=12)
-        ttk.Button(frame, text="Lưu cài đặt", style="Accent.TButton", command=self.save).grid(row=5, column=1, sticky="e", pady=(8, 0))
-        self.grab_set()
-
-    def save(self):
-        try:
-            days = int(self.days.get())
-            daily_time = parse_time(self.at_time.get()).strftime("%H:%M")
-            self.app.store.save_settings(days_before=days, daily_time=daily_time, notifications_enabled=self.enabled.get())
-        except ValueError as exc:
-            messagebox.showerror("Cài đặt chưa hợp lệ", str(exc), parent=self)
-            return
-        self.destroy()
-        self.app.refresh_current()
-
-
-class ExportDialog(tk.Toplevel):
-    def __init__(self, app):
-        super().__init__(app.root)
-        self.app = app
-        self.title("Xuất báo cáo Excel")
-        self.transient(app.root)
-        frame = ttk.Frame(self, padding=26)
-        frame.pack(fill="both", expand=True)
-        today = date.today()
-        ttk.Label(frame, text="Khoảng ngày của các buổi lịch", font=ui_font(self, 15, "bold")).grid(row=0, column=0, columnspan=2, sticky="w", pady=(0, 16))
-        ttk.Label(frame, text="Từ ngày:").grid(row=1, column=0, sticky="w", pady=8)
-        self.start = DateEntry(frame, value=today.replace(day=1))
-        self.start.grid(row=1, column=1, padx=12)
-        ttk.Label(frame, text="Đến ngày:").grid(row=2, column=0, sticky="w", pady=8)
-        self.end = DateEntry(frame, value=today.replace(day=calendar.monthrange(today.year, today.month)[1]))
-        self.end.grid(row=2, column=1, padx=12)
-        ttk.Label(frame, text="Báo cáo luôn gồm toàn bộ công việc.\nLịch chỉ mở rộng trong khoảng ngày đã chọn.\nFile Excel là báo cáo, không thay thế bản sao lưu.", style="Subtitle.TLabel").grid(row=3, column=0, columnspan=2, sticky="w", pady=17)
-        ttk.Button(frame, text="Chọn nơi lưu và xuất", style="Accent.TButton", command=self.export).grid(row=4, column=0, columnspan=2, sticky="e")
-        self.grab_set()
-
-    def export(self):
-        try:
-            start, end = self.start.get_date(), self.end.get_date()
-            if start is None or end is None or start > end:
-                raise ValueError("Chọn khoảng ngày hợp lệ.")
-            target = filedialog.asksaveasfilename(parent=self, title="Lưu báo cáo", defaultextension=".xlsx", filetypes=[("Excel", "*.xlsx")], initialfile=f"NhacViec-{date.today():%Y%m%d}.xlsx")
-            if not target:
-                return
-            export_workbook(self.app.store, target, start, end)
-        except Exception as exc:
-            logging.exception("Xuất Excel thất bại")
-            messagebox.showerror("Không xuất được báo cáo", str(exc), parent=self)
-            return
-        messagebox.showinfo("Đã xuất báo cáo", f"Đã lưu: {target}", parent=self)
-        self.destroy()
+from .dialogs import TaskDialog, SettingsDialog, ExportDialog, STATUS_LABELS
+from .task_ui import TaskListPage, ALL_FILTER, TODO_FILTER
+from .theme import BG, INK, MUTED, PRIMARY, BORDER, configure_style, line_icon
 
 
 class NhacViecApp:
@@ -397,33 +32,65 @@ class NhacViecApp:
         self.notification_window = None
         self.notification_text = None
         self.notifications = []
-        root.title(f"Nhắc việc anh Hà {__version__} — bản dựng mới")
-        root.geometry("1320x850")
-        root.minsize(1120, 720)
+        root.title(f"Nhắc việc anh Hà · {__version__}")
+        width = max(1120, min(1320, root.winfo_screenwidth() - 64))
+        height = max(680, min(820, root.winfo_screenheight() - 96))
+        root.geometry(f"{width}x{height}")
+        root.minsize(1120, 680)
         root.configure(background=BG)
         configure_style(root)
         root.report_callback_exception = self.report_exception
         root.protocol("WM_DELETE_WINDOW", self.minimize)
+        footer = ttk.Frame(root, style="Surface.TFrame", padding=(18, 6))
+        footer.pack(side="bottom", fill="x")
+        self.status_var = tk.StringVar(value="Sẵn sàng  ·  Dữ liệu được lưu trên máy tính của anh")
+        ttk.Label(footer, textvariable=self.status_var, style="SideMeta.TLabel").pack(side="left")
+        ttk.Label(footer, text=f"Phiên bản {__version__}", style="SideMeta.TLabel").pack(side="right")
         shell = ttk.Frame(root)
         shell.pack(fill="both", expand=True)
-        self.sidebar = ttk.Frame(shell, style="Side.TFrame", padding=(16, 22), width=228)
+        nav_font = tkfont.Font(root=root, font=ui_font(root, 10, "bold"))
+        sidebar_width = max(216, nav_font.measure("Đang thực hiện   999") + 64)
+        self.sidebar = ttk.Frame(shell, style="Side.TFrame", padding=(12, 24), width=sidebar_width)
         self.sidebar.pack(side="left", fill="y")
         self.sidebar.pack_propagate(False)
-        ttk.Button(self.sidebar, text="Thoát hẳn", command=self.exit).pack(side="bottom", fill="x", pady=(15, 0))
-        ttk.Label(self.sidebar, text="NHẮC VIỆC\nANH HÀ", style="Side.TLabel").pack(anchor="w", padx=7, pady=(0, 23))
-        ttk.Button(self.sidebar, text="＋ Tạo công việc", style="Accent.TButton", command=self.new_task).pack(fill="x", pady=(0, 15))
+        bottom = ttk.Frame(self.sidebar, style="Surface.TFrame")
+        bottom.pack(side="bottom", fill="x")
+        ttk.Separator(bottom).pack(fill="x", pady=(10, 10))
+        ttk.Button(bottom, text="Thông tin ứng dụng", style="Nav.TButton", command=self.about).pack(fill="x")
+        ttk.Button(bottom, text="Thoát hẳn ứng dụng", style="Nav.TButton", command=self.exit).pack(fill="x", pady=(2, 0))
+        brand = ttk.Frame(self.sidebar, style="Surface.TFrame")
+        brand.pack(fill="x", padx=9, pady=(0, 25))
+        logo = tk.Canvas(brand, width=34, height=34, background="white", highlightthickness=0)
+        logo.pack(side="left", padx=(0, 9))
+        logo.create_oval(1, 1, 33, 33, fill=PRIMARY, outline=PRIMARY)
+        logo.create_line(10, 17, 15, 22, 25, 11, fill="white", width=3, capstyle="round", joinstyle="round")
+        brand_text = ttk.Frame(brand, style="Surface.TFrame")
+        brand_text.pack(side="left")
+        ttk.Label(brand_text, text="Nhắc việc", style="Side.TLabel").pack(anchor="w")
+        ttk.Label(brand_text, text="Không gian cá nhân", style="SideMeta.TLabel").pack(anchor="w", pady=(3, 0))
+        ttk.Label(self.sidebar, text="CÔNG VIỆC", style="SideSection.TLabel").pack(anchor="w", padx=12, pady=(0, 9))
         self.nav_buttons = {}
-        for key, text in [("active", "Cần làm"), ("in_progress", "Đang thực hiện"), ("due", "Sắp đến hạn"), ("completed", "Đã hoàn thành"), ("canceled", "Đã hủy"), ("calendar", "Lịch tuần / tháng / năm")]:
-            b = ttk.Button(self.sidebar, text=text, style="Nav.TButton", command=lambda k=key: self.show_page(k))
-            b.pack(fill="x", pady=3)
+        self._nav_icons = {}
+        for key, text in [("active", "Việc cần làm"), ("in_progress", "Đang thực hiện"), ("due", "Sắp đến hạn"),
+                          ("completed", "Đã hoàn thành"), ("canceled", "Đã hủy"), ("calendar", "Lịch của anh")]:
+            self._nav_icons[key] = (line_icon(root, key, MUTED), line_icon(root, key, PRIMARY))
+            b = ttk.Button(self.sidebar, text=text, image=self._nav_icons[key][0], compound="left",
+                           style="Nav.TButton", command=lambda k=key: self.show_page(k))
+            b.pack(fill="x", pady=2)
             self.nav_buttons[key] = b
-        ttk.Separator(self.sidebar).pack(fill="x", pady=14)
-        for text, action in [("Xuất dữ liệu Excel", lambda: ExportDialog(self)), ("Cài đặt nhắc việc", lambda: SettingsDialog(self)), ("Sao lưu dữ liệu", self.backup), ("Khôi phục dữ liệu", self.restore), ("Thông báo đã nhận", self.show_notification_center), ("Thông tin bản dựng", self.about)]:
+        ttk.Label(self.sidebar, text="TIỆN ÍCH", style="SideSection.TLabel").pack(anchor="w", padx=12, pady=(24, 9))
+        self.data_menu = tk.Menu(self.sidebar, tearoff=False, borderwidth=0, activeborderwidth=0)
+        for text, action in (("Xuất báo cáo Excel…", lambda: ExportDialog(self)), ("Sao lưu dữ liệu…", self.backup),
+                             ("Khôi phục dữ liệu…", self.restore)):
+            self.data_menu.add_command(label=text, command=action)
+        ttk.Menubutton(self.sidebar, text="Dữ liệu và báo cáo", style="Utility.TMenubutton", menu=self.data_menu).pack(fill="x", pady=2)
+        for text, action in (("Cài đặt nhắc việc", lambda: SettingsDialog(self)), ("Thông báo đã nhận", self.show_notification_center)):
             ttk.Button(self.sidebar, text=text, style="Nav.TButton", command=action).pack(fill="x", pady=2)
+        ttk.Frame(shell, style="Border.TFrame", width=1).pack(side="left", fill="y")
         self.content = ttk.Frame(shell)
         self.content.pack(side="left", fill="both", expand=True)
-        self.status_var = tk.StringVar(value="Dữ liệu được lưu trên máy · Bản dựng mới có thư mục dữ liệu riêng")
-        ttk.Label(root, textvariable=self.status_var, padding=(16, 7), style="Subtitle.TLabel").pack(fill="x")
+        root.bind("<Control-n>", lambda _e: self.new_task())
+        root.bind("<Control-f>", self.focus_search)
         self.platform = PlatformSupport(root, self.show_window, self.exit, self.on_notification_action)
         if integrations:
             self.platform.start_tray()
@@ -451,6 +118,10 @@ class NhacViecApp:
         for page in self.pages.values():
             page.pack_forget()
         self.current_page = key
+        for nav_key, button in self.nav_buttons.items():
+            selected = nav_key == key
+            button.configure(style="Selected.Nav.TButton" if selected else "Nav.TButton",
+                             image=self._nav_icons[nav_key][int(selected)])
         self.pages[key].pack(fill="both", expand=True)
         self.refresh_current()
 
@@ -459,9 +130,16 @@ class NhacViecApp:
         if page:
             page.refresh()
         active = len(self.store.list_tasks(status="active"))
-        self.nav_buttons["active"].configure(text=f"Cần làm  ·  {active}")
+        self.nav_buttons["active"].configure(text=f"Việc cần làm   {active}")
         for key in ("in_progress", "completed", "canceled"):
-            self.nav_buttons[key].configure(text=f"{STATUS_LABELS[key]}  ·  {len(self.store.list_tasks(status=key))}")
+            self.nav_buttons[key].configure(text=f"{STATUS_LABELS[key]}   {len(self.store.list_tasks(status=key))}")
+
+    def focus_search(self, _event=None):
+        page = self.pages.get(self.current_page)
+        if isinstance(page, TaskListPage):
+            page.search_entry.focus_set()
+            page.search_entry.selection_range(0, "end")
+            return "break"
 
     def new_task(self):
         return TaskDialog(self)
@@ -543,7 +221,9 @@ class NhacViecApp:
             window.title("Thông báo nhắc việc")
             window.geometry("650x470")
             ttk.Label(window, text="Thông báo trong phiên làm việc", font=ui_font(window, 16, "bold"), padding=16).pack(anchor="w")
-            self.notification_text = ScrolledText(window, wrap="word", relief="flat", padx=16, pady=12)
+            self.notification_text = ScrolledText(window, wrap="word", relief="flat", padx=20, pady=16,
+                                                  font=ui_font(window, 11), background="white", foreground=INK,
+                                                  spacing1=4, spacing3=8)
             self.notification_text.pack(fill="both", expand=True)
             ttk.Button(window, text="Đóng", command=window.destroy).pack(anchor="e", padx=16, pady=12)
             self.notification_window = window
@@ -572,7 +252,7 @@ class NhacViecApp:
             self.status_var.set("Ứng dụng đang chạy; cửa sổ thu nhỏ trên thanh tác vụ. Dùng Thoát hẳn để dừng nhắc.")
 
     def about(self):
-        messagebox.showinfo("Thông tin bản dựng", f"Nhắc việc anh Hà {__version__}\nMã nguồn dựng mới từ tài liệu 1.7.0 và các yêu cầu bổ sung.\n\nDữ liệu: {self.store.path}\n\nBản mới có thư mục riêng. Chưa xác nhận nhập dữ liệu tasks.db của bản cũ.\nCác chức năng Windows cần kiểm thử trên máy Windows trước phát hành.", parent=self.root)
+        messagebox.showinfo("Nhắc việc anh Hà", f"Nhắc việc anh Hà {__version__}\nQuản lý công việc và lịch cá nhân.\n\nDữ liệu: {self.store.path}\n\nDữ liệu bản 2.0.0 tiếp tục dùng được trong bản này. Chưa hỗ trợ tự động nhập dữ liệu bản 1.7.0.", parent=self.root)
 
     def report_exception(self, exc_type, value, tb):
         logging.error("Lỗi giao diện: %s", "".join(traceback.format_exception(exc_type, value, tb)))

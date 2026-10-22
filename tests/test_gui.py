@@ -87,6 +87,72 @@ class DesktopTests(unittest.TestCase):
         self.assertEqual(result[0].deadline, datetime(2027, 2, 3, 14, 35))
         self.assertEqual(result[0].content, "Nội dung đầy đủ\nDòng thứ hai")
 
+    def test_task_text_and_actions_remain_visible_after_window_resize(self):
+        task = self.store.create_task(
+            "Hoàn thiện báo cáo định kỳ và rà soát toàn bộ hồ sơ liên quan đến kế hoạch triển khai của các phòng ban",
+            datetime.now() + timedelta(days=3),
+            "Quản lý vận hành và phối hợp công việc giữa các phòng ban trong đơn vị",
+            "Chuẩn bị báo cáo ngắn và danh sách các việc cần trao đổi trong cuộc họp giao ban tuần tới.",
+        )
+        page = self.app.pages["active"]
+        page.query_var.set("Hoàn thiện báo cáo định kỳ")
+        page.refresh()
+        for geometry in ("1366x768", "1120x720", "1366x768"):
+            with self.subTest(geometry=geometry):
+                self.root.geometry(geometry)
+                self.root.update()
+                card = page.cards_by_id[task.id]
+                for label in card.wrapping_labels:
+                    self.assertGreaterEqual(label.winfo_width(), label.winfo_reqwidth())
+                    self.assertGreaterEqual(label.winfo_height(), label.winfo_reqheight())
+                buttons = [grandchild for child in card.winfo_children()
+                           for grandchild in child.winfo_children()
+                           if grandchild.winfo_class() == "TButton"]
+                self.assertEqual({button.cget("text") for button in buttons},
+                                 {"Chi tiết", "Bắt đầu", "Hoàn thành"})
+                for button in buttons:
+                    self.assertGreaterEqual(button.winfo_rootx(), card.winfo_rootx())
+                    self.assertLessEqual(button.winfo_rootx() + button.winfo_width(),
+                                         card.winfo_rootx() + card.winfo_width())
+                    self.assertGreaterEqual(button.winfo_width(), button.winfo_reqwidth())
+
+    def test_compact_task_dialog_keeps_save_visible_while_form_scrolls(self):
+        task = self.store.get_task(self.tasks[1].id)
+        dialog = TaskDialog(self.app, task)
+        try:
+            dialog.geometry("640x560")
+            self.root.update()
+
+            def descendants(widget):
+                for child in widget.winfo_children():
+                    yield child
+                    yield from descendants(child)
+
+            buttons = [widget for widget in descendants(dialog)
+                       if widget.winfo_class() == "TButton"
+                       and widget.cget("text") in ("Tạm dừng", "Hủy việc", "Đóng", "Lưu công việc")]
+            self.assertEqual(len(buttons), 4)
+            for button in buttons:
+                self.assertGreaterEqual(button.winfo_rootx(), dialog.winfo_rootx())
+                self.assertLessEqual(button.winfo_rootx() + button.winfo_width(),
+                                     dialog.winfo_rootx() + dialog.winfo_width())
+                self.assertLessEqual(button.winfo_rooty() + button.winfo_height(),
+                                     dialog.winfo_rooty() + dialog.winfo_height())
+                self.assertGreaterEqual(button.winfo_width(), button.winfo_reqwidth())
+            save = next(button for button in buttons if button.cget("text") == "Lưu công việc")
+            save_position = (save.winfo_rootx(), save.winfo_rooty())
+            canvas = dialog.form.canvas
+            self.assertGreater(dialog.form.content.winfo_height(), canvas.winfo_height())
+            before = canvas.yview()
+            canvas.yview_moveto(1)
+            self.root.update()
+            self.assertGreater(canvas.yview()[0], before[0])
+            self.assertEqual((save.winfo_rootx(), save.winfo_rooty()), save_position)
+            self.assertLessEqual(dialog.requirements_text.winfo_rooty() + dialog.requirements_text.winfo_height(),
+                                 canvas.winfo_rooty() + canvas.winfo_height())
+        finally:
+            dialog.destroy()
+
     def test_real_calendar_navigation_from_main_window(self):
         self.app.show_page("calendar")
         calendar = self.app.pages["calendar"]

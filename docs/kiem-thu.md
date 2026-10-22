@@ -1,4 +1,10 @@
-# Kết quả kiểm tra mã nguồn và bộ cài 2.0.0
+# Kết quả kiểm tra mã nguồn và bộ cài
+
+## Bản 2.0.1 — giao diện mới
+
+Ngày 22/10/2026: bản 2.0.1 đạt 77 kiểm thử trên Linux/Xvfb, hai kiểm tra ứng dụng `--self-test` / `--gui-smoke-test`, cùng 24 kiểm tra bố cục và 24 ảnh chụp ở 1120×720, 1366×768, cỡ chữ mặc định và Tk 120 DPI. Các kiểm tra hồi quy mới xác nhận văn bản dài không bị cắt khi thay đổi kích thước và nút lưu luôn hiển thị khi cuộn biểu mẫu. Kết quả dựng/cài đặt Windows 2.0.1 sẽ được ghi sau khi workflow hoàn tất. Kết quả lịch sử bên dưới thuộc bản 2.0.0.
+
+## Lịch sử bản 2.0.0
 
 Ngày kiểm tra gần nhất: 22/10/2026. Trên Windows, [lần dựng GitHub Actions 39707130999](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/actions/runs/39707130999) đã thành công với mã nguồn [b0097407d3a19f8d5c3e564206af40f9e1531f26](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/tree/b0097407d3a19f8d5c3e564206af40f9e1531f26), runner `windows-2022`, Python 3.13 x64 và dependency đã ghim trong `requirements-build.txt`.
 

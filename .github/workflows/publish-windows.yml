@@ -13,7 +13,7 @@ on:
         type: string
 
 concurrency:
-  group: publish-windows-2.0.0-preview.1
+  group: publish-windows-2.0.1-preview.1
   cancel-in-progress: false
 
 permissions: {}
@@ -71,7 +71,7 @@ jobs:
       - name: Download installer from the validated build
         uses: actions/download-artifact@v4
         with:
-          name: NhacViecAnhHa-Windows-x64-2.0.0
+          name: NhacViecAnhHa-Windows-x64-2.0.1
           path: installer
           run-id: ${{ inputs.build_run_id }}
           repository: ${{ github.repository }}
@@ -83,7 +83,7 @@ jobs:
           $ErrorActionPreference = 'Stop'
           Set-StrictMode -Version Latest
           $InstallerDirectory = Join-Path $env:GITHUB_WORKSPACE 'installer'
-          $InstallerName = 'NhacViecAnhHa-Setup-2.0.0-x64.exe'
+          $InstallerName = 'NhacViecAnhHa-Setup-2.0.1-x64.exe'
           $InstallerPath = Join-Path $InstallerDirectory $InstallerName
           if (-not (Test-Path -LiteralPath $InstallerPath -PathType Leaf)) {
             throw 'The installer executable is missing.'
@@ -101,7 +101,7 @@ jobs:
           }
           $ChecksumPath = Join-Path $InstallerDirectory 'SHA256SUMS.txt'
           $ChecksumText = Get-Content -LiteralPath $ChecksumPath -Raw
-          $ChecksumPattern = '\A(?<hash>[0-9a-fA-F]{64})  NhacViecAnhHa-Setup-2\.0\.0-x64\.exe(?:\r?\n)?\z'
+          $ChecksumPattern = '\A(?<hash>[0-9a-fA-F]{64})  NhacViecAnhHa-Setup-2\.0\.1-x64\.exe(?:\r?\n)?\z'
           if ($ChecksumText -cnotmatch $ChecksumPattern) {
             throw 'SHA256SUMS.txt must contain exactly the expected installer entry.'
           }
@@ -115,7 +115,7 @@ jobs:
             $ReportPath = Join-Path $InstallerDirectory $Check.File
             $Report = Get-Content -LiteralPath $ReportPath -Raw | ConvertFrom-Json
             if ($null -eq $Report -or $Report.passed -isnot [bool] -or $Report.passed -ne $true -or
-                $Report.gui -isnot [bool] -or $Report.gui -ne $Check.Gui -or $Report.version -cne '2.0.0') {
+                $Report.gui -isnot [bool] -or $Report.gui -ne $Check.Gui -or $Report.version -cne '2.0.1') {
               throw "Invalid packaged self-test result: $($Check.File)."
             }
             if ($Report.checks -isnot [System.Array] -or @($Report.checks).Count -eq 0) {
@@ -125,6 +125,19 @@ jobs:
               if ($RecordedCheck -isnot [string] -or [string]::IsNullOrWhiteSpace($RecordedCheck)) {
                 throw "An invalid packaged check was recorded in $($Check.File)."
               }
+            }
+          }
+          $LayoutDirectory = Join-Path $InstallerDirectory 'ui-preview'
+          $LayoutReport = Get-Content (Join-Path $LayoutDirectory 'layout-check.json') -Raw | ConvertFrom-Json
+          if ($LayoutReport.passed -isnot [bool] -or $LayoutReport.passed -ne $true -or
+              $LayoutReport.version -cne '2.0.1' -or $LayoutReport.platform -cne 'win32' -or
+              @($LayoutReport.checks).Count -lt 24 -or @($LayoutReport.screenshots).Count -lt 24) {
+            throw 'Windows desktop layout checks did not pass.'
+          }
+          foreach ($Preview in @('tasks-1366x768.png', 'calendar-month-1366x768.png', 'task-dialog.png')) {
+            $Bytes = [System.IO.File]::ReadAllBytes((Join-Path $LayoutDirectory $Preview))
+            if ($Bytes.Length -lt 100 -or [System.BitConverter]::ToString($Bytes, 0, 8) -cne '89-50-4E-47-0D-0A-1A-0A') {
+              throw "Invalid desktop preview image: $Preview"
             }
           }
           Add-Content -LiteralPath $env:GITHUB_STEP_SUMMARY -Encoding utf8 -Value "Verified installer SHA256: $ActualHash"
@@ -138,7 +151,7 @@ jobs:
           $PSNativeCommandUseErrorActionPreference = $false
           Set-StrictMode -Version Latest
           $Repository = $env:GITHUB_REPOSITORY
-          $Tag = 'windows-2.0.0-preview.1'
+          $Tag = 'windows-2.0.1-preview.1'
           $ExpectedSha = $env:VALIDATED_BUILD_SHA
           function Assert-GitHubResourceMissing {
             param([string]$Endpoint, [string]$Description)
@@ -153,33 +166,46 @@ jobs:
           Assert-GitHubResourceMissing "repos/$Repository/releases/tags/$Tag" "Release $Tag"
           Assert-GitHubResourceMissing "repos/$Repository/git/ref/tags/$Tag" "Tag $Tag"
           $Notes = @'
-          Bộ cài Nhắc việc anh Hà 2.0.0 dành cho Windows 10/11 x64, phát hành thử nghiệm.
+          Bộ cài Nhắc việc anh Hà 2.0.1 dành cho Windows 10/11 x64, phát hành thử nghiệm.
 
-          Bản dựng tham chiếu đã chạy thành công 75 kiểm thử trên Windows, kiểm tra EXE bằng `--self-test` và `--gui-smoke-test`, cùng kiểm tra cài đặt và gỡ cài đặt tự động. Hai báo cáo kiểm tra EXE và mã SHA256 được đính kèm.
+          Giao diện mới dùng font Segoe UI trên Windows, nền sáng, điểm nhấn xanh và trạng thái phân biệt rõ. Danh sách công việc được sắp xếp gọn, bộ lọc nâng cao có thể thu gọn; lịch và biểu mẫu dùng cùng cách trình bày. Cửa sổ biểu mẫu giữ nút Lưu luôn hiển thị.
+
+          Bản dựng tham chiếu đã chạy thành công toàn bộ kiểm thử mã nguồn trên Windows, kiểm tra EXE bằng `--self-test` và `--gui-smoke-test`, cùng kiểm tra cài đặt và gỡ cài đặt tự động. Hai báo cáo kiểm tra EXE và mã SHA256 được đính kèm.
 
           Mã nguồn đã kiểm thử: `__SOURCE_SHA__`.
           Lần dựng Windows: __BUILD_RUN_URL__
 
+          Đã kiểm tra bố cục ở 1120×720 và 1366×768, với cỡ chữ mặc định và Tk 120 DPI. Các ảnh dưới đây chụp từ ứng dụng thật trên Windows bằng dữ liệu minh họa tạm thời.
+
+          ![Danh sách công việc](https://github.com/__REPOSITORY__/releases/download/windows-2.0.1-preview.1/tasks-1366x768.png)
+          ![Lịch tháng](https://github.com/__REPOSITORY__/releases/download/windows-2.0.1-preview.1/calendar-month-1366x768.png)
+
           Cài đặt:
-          1. Tải `NhacViecAnhHa-Setup-2.0.0-x64.exe` và `SHA256SUMS.txt` từ phần Assets.
+          1. Tải `NhacViecAnhHa-Setup-2.0.1-x64.exe` và `SHA256SUMS.txt` từ phần Assets.
           2. Đối chiếu SHA256, sau đó mở bộ cài và làm theo hướng dẫn. Ứng dụng được cài cho tài khoản Windows hiện tại.
           3. Mở Nhắc việc anh Hà từ menu Start hoặc trang cuối của bộ cài.
+
+          Nếu đang dùng 2.0.0: chọn Thoát hẳn ứng dụng trước khi chạy bộ cài mới. Dữ liệu 2.0.0 được dùng tiếp; không cần gỡ bản cũ.
 
           Dữ liệu của bản mới nằm tại `~\NhacViecAnhHaMoi\data\tasks.db`, tách riêng dữ liệu bản cũ. Bản này chưa hỗ trợ tự động nhập cơ sở dữ liệu của bản 1.7.0; gỡ cài đặt giữ lại dữ liệu người dùng.
 
           Bộ cài chưa ký số, vì vậy Windows có thể hiển thị cảnh báo SmartScreen. Thông báo Windows và khay hệ thống cần được kiểm tra thêm trên máy sử dụng thực tế.
           '@
-          $Notes = $Notes.Replace('__SOURCE_SHA__', $ExpectedSha).Replace('__BUILD_RUN_URL__', $env:VALIDATED_BUILD_RUN_URL)
+          $Notes = $Notes.Replace('__SOURCE_SHA__', $ExpectedSha).Replace('__BUILD_RUN_URL__', $env:VALIDATED_BUILD_RUN_URL).Replace('__REPOSITORY__', $Repository)
           $NotesPath = Join-Path $env:RUNNER_TEMP ('NhacViecAnhHa-release-notes-' + $env:GITHUB_RUN_ID + '.md')
           Set-Content -LiteralPath $NotesPath -Value $Notes -Encoding utf8
           $InstallerDirectory = Join-Path $env:GITHUB_WORKSPACE 'installer'
           $Assets = @(
-            (Join-Path $InstallerDirectory 'NhacViecAnhHa-Setup-2.0.0-x64.exe'),
+            (Join-Path $InstallerDirectory 'NhacViecAnhHa-Setup-2.0.1-x64.exe'),
             (Join-Path $InstallerDirectory 'SHA256SUMS.txt'),
             (Join-Path $InstallerDirectory 'self-test.json'),
-            (Join-Path $InstallerDirectory 'gui-smoke-test.json')
+            (Join-Path $InstallerDirectory 'gui-smoke-test.json'),
+            (Join-Path $InstallerDirectory 'ui-preview/layout-check.json'),
+            (Join-Path $InstallerDirectory 'ui-preview/tasks-1366x768.png'),
+            (Join-Path $InstallerDirectory 'ui-preview/calendar-month-1366x768.png'),
+            (Join-Path $InstallerDirectory 'ui-preview/task-dialog.png')
           )
-          & gh release create $Tag @Assets --repo $Repository --target $ExpectedSha --prerelease --title 'Nhắc việc anh Hà 2.0.0 thử nghiệm — Windows x64' --notes-file $NotesPath
+          & gh release create $Tag @Assets --repo $Repository --target $ExpectedSha --prerelease --title 'Nhắc việc anh Hà 2.0.1 thử nghiệm — Windows x64' --notes-file $NotesPath
           if ($LASTEXITCODE -ne 0) { throw 'GitHub did not publish the Windows preview release successfully.' }
           $ReleaseUrl = & gh release view $Tag --repo $Repository --json url --jq '.url'
           if ($LASTEXITCODE -ne 0) { throw 'The release was published, but its URL could not be read.' }
