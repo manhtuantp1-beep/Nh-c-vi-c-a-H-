@@ -1,0 +1,186 @@
+name: Publish Windows installer
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_run_id:
+        description: Successful Windows build run ID from this repository
+        required: true
+        type: string
+      expected_sha:
+        description: Full source commit SHA tested by the Windows build
+        required: true
+        type: string
+
+concurrency:
+  group: publish-windows-2.0.0-preview.1
+  cancel-in-progress: false
+
+permissions: {}
+
+jobs:
+  publish-installer:
+    runs-on: windows-2022
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      actions: read
+    env:
+      BUILD_RUN_ID: ${{ inputs.build_run_id }}
+      EXPECTED_SHA: ${{ inputs.expected_sha }}
+
+    steps:
+      - name: Validate successful Windows build provenance
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $false
+          Set-StrictMode -Version Latest
+          if ($env:BUILD_RUN_ID -notmatch '^[1-9][0-9]*$') {
+            throw 'build_run_id must be a positive decimal run ID.'
+          }
+          if ($env:EXPECTED_SHA -notmatch '^[0-9a-fA-F]{40}$') {
+            throw 'expected_sha must contain exactly 40 hexadecimal characters.'
+          }
+          $ExpectedSha = $env:EXPECTED_SHA.ToLowerInvariant()
+          $RunJson = & gh api "repos/$env:GITHUB_REPOSITORY/actions/runs/$env:BUILD_RUN_ID"
+          if ($LASTEXITCODE -ne 0) { throw 'Unable to read the requested build run.' }
+          $Run = ($RunJson -join "`n") | ConvertFrom-Json
+          if ([string]$Run.id -cne $env:BUILD_RUN_ID) { throw 'The returned build run ID does not match.' }
+          if ($Run.repository.full_name -ine $env:GITHUB_REPOSITORY -or
+              $Run.head_repository.full_name -ine $env:GITHUB_REPOSITORY) {
+            throw 'The build must use source from this repository.'
+          }
+          if ($Run.status -cne 'completed' -or $Run.conclusion -cne 'success') {
+            throw 'The referenced Windows build has not completed successfully.'
+          }
+          if (([string]$Run.head_sha).ToLowerInvariant() -cne $ExpectedSha) {
+            throw 'The successful build did not test expected_sha.'
+          }
+          if ($Run.head_branch -cne 'main') { throw 'The build must come from main.' }
+          $WorkflowPath = ([string]$Run.path -split '@', 2)[0]
+          if ($WorkflowPath -cne '.github/workflows/windows-build.yml') {
+            throw 'The run did not use the Windows installer build workflow.'
+          }
+          $BuildRunUrl = "$env:GITHUB_SERVER_URL/$env:GITHUB_REPOSITORY/actions/runs/$env:BUILD_RUN_ID"
+          Add-Content -LiteralPath $env:GITHUB_ENV -Encoding utf8 -Value "VALIDATED_BUILD_SHA=$ExpectedSha"
+          Add-Content -LiteralPath $env:GITHUB_ENV -Encoding utf8 -Value "VALIDATED_BUILD_RUN_URL=$BuildRunUrl"
+
+      - name: Download installer from the validated build
+        uses: actions/download-artifact@v4
+        with:
+          name: NhacViecAnhHa-Windows-x64-2.0.0
+          path: installer
+          run-id: ${{ inputs.build_run_id }}
+          repository: ${{ github.repository }}
+          github-token: ${{ github.token }}
+
+      - name: Verify installer, checksum, and packaged self-test reports
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          Set-StrictMode -Version Latest
+          $InstallerDirectory = Join-Path $env:GITHUB_WORKSPACE 'installer'
+          $InstallerName = 'NhacViecAnhHa-Setup-2.0.0-x64.exe'
+          $InstallerPath = Join-Path $InstallerDirectory $InstallerName
+          if (-not (Test-Path -LiteralPath $InstallerPath -PathType Leaf)) {
+            throw 'The installer executable is missing.'
+          }
+          if ((Get-Item -LiteralPath $InstallerPath).Length -le 0) {
+            throw 'The installer executable is empty.'
+          }
+          $Stream = [System.IO.File]::OpenRead($InstallerPath)
+          try {
+            if ($Stream.ReadByte() -ne 0x4D -or $Stream.ReadByte() -ne 0x5A) {
+              throw 'The installer does not have a Windows executable MZ header.'
+            }
+          } finally {
+            $Stream.Dispose()
+          }
+          $ChecksumPath = Join-Path $InstallerDirectory 'SHA256SUMS.txt'
+          $ChecksumText = Get-Content -LiteralPath $ChecksumPath -Raw
+          $ChecksumPattern = '\A(?<hash>[0-9a-fA-F]{64})  NhacViecAnhHa-Setup-2\.0\.0-x64\.exe(?:\r?\n)?\z'
+          if ($ChecksumText -cnotmatch $ChecksumPattern) {
+            throw 'SHA256SUMS.txt must contain exactly the expected installer entry.'
+          }
+          $ExpectedHash = $Matches['hash'].ToLowerInvariant()
+          $ActualHash = (Get-FileHash -LiteralPath $InstallerPath -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($ActualHash -cne $ExpectedHash) { throw 'The installer SHA256 does not match SHA256SUMS.txt.' }
+          foreach ($Check in @(
+            @{ File = 'self-test.json'; Gui = $false },
+            @{ File = 'gui-smoke-test.json'; Gui = $true }
+          )) {
+            $ReportPath = Join-Path $InstallerDirectory $Check.File
+            $Report = Get-Content -LiteralPath $ReportPath -Raw | ConvertFrom-Json
+            if ($null -eq $Report -or $Report.passed -isnot [bool] -or $Report.passed -ne $true -or
+                $Report.gui -isnot [bool] -or $Report.gui -ne $Check.Gui -or $Report.version -cne '2.0.0') {
+              throw "Invalid packaged self-test result: $($Check.File)."
+            }
+            if ($Report.checks -isnot [System.Array] -or @($Report.checks).Count -eq 0) {
+              throw "No packaged checks were recorded in $($Check.File)."
+            }
+            foreach ($RecordedCheck in $Report.checks) {
+              if ($RecordedCheck -isnot [string] -or [string]::IsNullOrWhiteSpace($RecordedCheck)) {
+                throw "An invalid packaged check was recorded in $($Check.File)."
+              }
+            }
+          }
+          Add-Content -LiteralPath $env:GITHUB_STEP_SUMMARY -Encoding utf8 -Value "Verified installer SHA256: $ActualHash"
+
+      - name: Publish the verified Windows preview release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $PSNativeCommandUseErrorActionPreference = $false
+          Set-StrictMode -Version Latest
+          $Repository = $env:GITHUB_REPOSITORY
+          $Tag = 'windows-2.0.0-preview.1'
+          $ExpectedSha = $env:VALIDATED_BUILD_SHA
+          function Assert-GitHubResourceMissing {
+            param([string]$Endpoint, [string]$Description)
+            $LookupOutput = & gh api --include $Endpoint 2>&1
+            $LookupExitCode = $LASTEXITCODE
+            if ($LookupExitCode -eq 0) { throw "$Description already exists; refusing to overwrite it." }
+            $LookupText = ($LookupOutput | ForEach-Object { $_.ToString() }) -join "`n"
+            if ($LookupExitCode -ne 1 -or $LookupText -notmatch '(?m)^HTTP/\S+\s+404(?:\s|$)') {
+              throw "Unable to verify that $Description is absent (gh exit $LookupExitCode)."
+            }
+          }
+          Assert-GitHubResourceMissing "repos/$Repository/releases/tags/$Tag" "Release $Tag"
+          Assert-GitHubResourceMissing "repos/$Repository/git/ref/tags/$Tag" "Tag $Tag"
+          $Notes = @'
+          Bộ cài Nhắc việc anh Hà 2.0.0 dành cho Windows 10/11 x64, phát hành thử nghiệm.
+
+          Bản dựng tham chiếu đã chạy thành công 75 kiểm thử trên Windows, kiểm tra EXE bằng `--self-test` và `--gui-smoke-test`, cùng kiểm tra cài đặt và gỡ cài đặt tự động. Hai báo cáo kiểm tra EXE và mã SHA256 được đính kèm.
+
+          Mã nguồn đã kiểm thử: `__SOURCE_SHA__`.
+          Lần dựng Windows: __BUILD_RUN_URL__
+
+          Cài đặt:
+          1. Tải `NhacViecAnhHa-Setup-2.0.0-x64.exe` và `SHA256SUMS.txt` từ phần Assets.
+          2. Đối chiếu SHA256, sau đó mở bộ cài và làm theo hướng dẫn. Ứng dụng được cài cho tài khoản Windows hiện tại.
+          3. Mở Nhắc việc anh Hà từ menu Start hoặc trang cuối của bộ cài.
+
+          Dữ liệu của bản mới nằm tại `~\NhacViecAnhHaMoi\data\tasks.db`, tách riêng dữ liệu bản cũ. Bản này chưa hỗ trợ tự động nhập cơ sở dữ liệu của bản 1.7.0; gỡ cài đặt giữ lại dữ liệu người dùng.
+
+          Bộ cài chưa ký số, vì vậy Windows có thể hiển thị cảnh báo SmartScreen. Thông báo Windows và khay hệ thống cần được kiểm tra thêm trên máy sử dụng thực tế.
+          '@
+          $Notes = $Notes.Replace('__SOURCE_SHA__', $ExpectedSha).Replace('__BUILD_RUN_URL__', $env:VALIDATED_BUILD_RUN_URL)
+          $NotesPath = Join-Path $env:RUNNER_TEMP ('NhacViecAnhHa-release-notes-' + $env:GITHUB_RUN_ID + '.md')
+          Set-Content -LiteralPath $NotesPath -Value $Notes -Encoding utf8
+          $InstallerDirectory = Join-Path $env:GITHUB_WORKSPACE 'installer'
+          $Assets = @(
+            (Join-Path $InstallerDirectory 'NhacViecAnhHa-Setup-2.0.0-x64.exe'),
+            (Join-Path $InstallerDirectory 'SHA256SUMS.txt'),
+            (Join-Path $InstallerDirectory 'self-test.json'),
+            (Join-Path $InstallerDirectory 'gui-smoke-test.json')
+          )
+          & gh release create $Tag @Assets --repo $Repository --target $ExpectedSha --prerelease --title 'Nhắc việc anh Hà 2.0.0 thử nghiệm — Windows x64' --notes-file $NotesPath
+          if ($LASTEXITCODE -ne 0) { throw 'GitHub did not publish the Windows preview release successfully.' }
+          $ReleaseUrl = & gh release view $Tag --repo $Repository --json url --jq '.url'
+          if ($LASTEXITCODE -ne 0) { throw 'The release was published, but its URL could not be read.' }
+          Add-Content -LiteralPath $env:GITHUB_STEP_SUMMARY -Encoding utf8 -Value "Published Windows installer: $ReleaseUrl"

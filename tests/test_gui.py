@@ -96,6 +96,9 @@ class DesktopTests(unittest.TestCase):
             self.root.update()
         self.assertEqual(self.app.current_page, "calendar")
         self.assertGreater(calendar.tree.winfo_height(), 100)
+        self.root.geometry("1120x720")
+        self.root.update()
+        self.assertGreater(calendar.tree.winfo_height(), 100)
 
     def test_pending_timer_handles_do_not_accumulate(self):
         called = []

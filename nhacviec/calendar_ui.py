@@ -6,7 +6,6 @@ import sqlite3
 from collections import defaultdict
 from datetime import date, datetime, time, timedelta
 import tkinter as tk
-from tkinter import font as tkfont
 from tkinter import messagebox, ttk
 
 from .models import Schedule
@@ -77,7 +76,7 @@ class CalendarView(ttk.Frame):
 
     def _build(self):
         self.columnconfigure(0, weight=1)
-        self.rowconfigure(4, weight=1)
+        self.rowconfigure(4, weight=1, minsize=220)
         toolbar = ttk.Frame(self)
         toolbar.grid(row=0, column=0, sticky="ew", pady=(0, 10))
         ttk.Label(toolbar, text="Lịch", font=ui_font(self, 19, "bold")).pack(side="left")
@@ -255,17 +254,20 @@ class CalendarView(ttk.Frame):
                     button.state(["pressed"])
 
     def _draw_year(self):
-        families = {name.casefold(): name for name in tkfont.families(self)}
-        mono = next((families[name.casefold()] for name in ("Consolas", "DejaVu Sans Mono", "Courier New") if name.casefold() in families), ui_font(self)[0])
-        ttk.Style(self).configure("MiniCalendar.TButton", font=(mono, 8), padding=(4, 3))
+        # Keep the daily results usable on a 720px Windows desktop. Full mini
+        # calendars consume most of the window; each tile opens the month grid.
+        ttk.Style(self).configure("YearMonth.TButton", font=ui_font(self, 10), padding=(10, 8))
         for col in range(4):
             self.calendar_frame.columnconfigure(col, weight=1, uniform="year")
         for month in range(1, 13):
+            days = sorted(day.day for day, items in self._by_day.items() if day.month == month and items)
             count = sum(len(items) for day, items in self._by_day.items() if day.month == month)
-            month_text = calendar.TextCalendar(firstweekday=0).formatmonth(self.anchor.year, month)
-            lines = month_text.splitlines()[2:]
-            text = f"Tháng {month:02d} · {count} buổi\nT2 T3 T4 T5 T6 T7 CN\n" + "\n".join(lines)
-            button = ttk.Button(self.calendar_frame, text=text, style="MiniCalendar.TButton",
+            dates = ", ".join(f"{day:02d}" for day in days[:4])
+            if len(days) > 4:
+                dates += "…"
+            detail = "Ngày: " + dates if dates else "Xem lịch tháng"
+            text = f"Tháng {month:02d}\n{count} buổi\n{detail}"
+            button = ttk.Button(self.calendar_frame, text=text, style="YearMonth.TButton",
                                 command=lambda m=month: self._open_month(m))
             button.grid(row=(month - 1) // 4, column=(month - 1) % 4, sticky="nsew", padx=3, pady=3)
 
