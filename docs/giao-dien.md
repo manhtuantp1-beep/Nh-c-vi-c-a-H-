@@ -1,10 +1,12 @@
-# Giao diện và nâng cấp 2.0.3
+# Giao diện và nâng cấp 2.0.4
 
 ## Chữ và bố cục
 
-Bản 2.0.3 dùng thanh điều hướng xanh navy, thẻ nội dung trắng và chữ đậm màu. Cỡ chữ nội dung mặc định 12 pt, tên công việc 13 pt đậm và thông tin phụ 11 pt. Cỡ chữ theo DPI của màn hình lúc mở ứng dụng. Xem [nguyên nhân chữ mờ và cách nâng cấp](readability.md).
+Bản 2.0.4 giữ giao diện từ 2.0.3: thanh điều hướng xanh navy, thẻ nội dung trắng và chữ đậm màu. Cỡ chữ nội dung mặc định 12 pt, tên công việc 13 pt đậm và thông tin phụ 11 pt. Cỡ chữ theo DPI của màn hình lúc mở ứng dụng. Xem [nguyên nhân chữ mờ và cách nâng cấp](readability.md).
 
 ## Ảnh từ EXE đóng gói trên Windows
+
+Bộ cài 2.0.4 đang được kiểm tra. Các ảnh 2.0.3 đã xác nhận dưới đây minh họa giao diện công việc/lịch/ghi chú được giữ lại; chúng không phải bằng chứng kiểm tra bộ cài 2.0.4.
 
 Các ảnh 2.0.3 dưới đây được tạo từ chính EXE đóng gói trên Windows và đã tải lại từ bản phát hành để xem. Chúng dùng dữ liệu minh họa tạm thời, không tự thêm vào dữ liệu người dùng. Pha native ghi DPI thực của cửa sổ trên runner là 96.
 
@@ -63,11 +65,13 @@ Dữ liệu và báo cáo trên thanh bên mở menu Xuất báo cáo Excel, Sao
 | Ctrl+Enter | Lưu biểu mẫu lịch |
 | Esc | Đóng biểu mẫu; công việc/ghi chú/lịch chưa lưu vẫn có bước xác nhận |
 
-## Nâng cấp từ 2.0.0–2.0.2
+## Nâng cấp lên 2.0.4
 
 1. Trong bản đang dùng, chọn Sao lưu dữ liệu và lưu bản sao ở vị trí dễ tìm. Với 2.0.1, mục này nằm trong Dữ liệu và báo cáo.
 2. Chọn Thoát hẳn trong ứng dụng hoặc menu khay hệ thống. Đóng cửa sổ bằng dấu X chỉ thu nhỏ ứng dụng và chưa đủ để cập nhật.
-3. Tải và chạy [bộ cài 2.0.3](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/download/windows-2.0.3-preview.1/NhacViecAnhHa-Setup-2.0.3-x64.exe). Giữ nguyên thư mục cài đặt đang dùng, rồi hoàn tất cài đặt.
-4. Mở ứng dụng và kiểm tra số phiên bản 2.0.3 ở thanh dưới cùng. Công việc, lịch và cài đặt 2.0.x dùng lại cơ sở dữ liệu hiện có tại `%USERPROFILE%\NhacViecAnhHaMoi\data\tasks.db`.
+3. Sau khi phát hành được xác nhận, tải và chạy [bộ cài 2.0.4](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/download/windows-2.0.4-preview.1/NhacViecAnhHa-Setup-2.0.4-x64.exe). Giữ nguyên thư mục cài đặt đang dùng, rồi hoàn tất cài đặt.
+4. Mở ứng dụng và kiểm tra số phiên bản 2.0.4 ở thanh dưới cùng. Công việc, lịch và cài đặt 2.0.x dùng lại cơ sở dữ liệu hiện có tại `%USERPROFILE%\NhacViecAnhHaMoi\data\tasks.db`.
 
-2.0.3 tự nâng cấp schema 1 lên schema 2 để thêm ghi chú, giữ nguyên vị trí và dữ liệu hiện có. Trước nâng cấp, ứng dụng kiểm tra dữ liệu và giữ bản `tasks.pre-upgrade-<ngày-giờ>.db` cùng thư mục. Không cần khôi phục hoặc nhập lại công việc. Sau nâng cấp, dùng 2.0.3 trở lên vì các bản cũ không đọc schema 2. Chức năng Khôi phục vẫn nhận bản sao hợp lệ từ 2.0.0–2.0.2; tệp sao lưu nguồn được giữ nguyên. Dữ liệu của ứng dụng gốc 1.7.0 vẫn nằm riêng và chưa được tự động nhập vào bản mới.
+Từ 2.0.3 lên 2.0.4 giữ schema 2, không nâng cấp lại cơ sở dữ liệu. Khi nâng cấp từ 2.0.0–2.0.2, ứng dụng tự nâng cấp schema 1 lên schema 2 để thêm ghi chú, giữ nguyên vị trí và dữ liệu hiện có. Trước nâng cấp, ứng dụng kiểm tra dữ liệu và giữ bản `tasks.pre-upgrade-<ngày-giờ>.db` cùng thư mục. Không cần khôi phục hoặc nhập lại công việc. Sau nâng cấp, dùng 2.0.3 trở lên vì các bản cũ không đọc schema 2. Chức năng Khôi phục vẫn nhận bản sao hợp lệ từ 2.0.0–2.0.2; tệp sao lưu nguồn được giữ nguyên. Dữ liệu của ứng dụng gốc 1.7.0 vẫn nằm riêng và chưa được tự động nhập vào bản mới.
+
+Khi gặp lỗi ghi tệp hoặc yêu cầu đóng ứng dụng trong lúc cài, xem [cách xử lý](cai-dat.md).

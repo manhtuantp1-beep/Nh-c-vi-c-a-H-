@@ -4,7 +4,7 @@
 !include "x64.nsh"
 
 !ifndef APP_VERSION
-  !define APP_VERSION "2.0.3"
+  !define APP_VERSION "2.0.4"
 !endif
 !ifndef SOURCE_DIR
   !error "Pass /DSOURCE_DIR=<absolute path to dist\NhacViecAnhHa>"
@@ -27,8 +27,10 @@ SetCompressor /SOLID lzma
 SetCompressorDictSize 32
 ShowInstDetails show
 ShowUninstDetails show
+; A skipped runtime DLL would leave a mixed, unusable installation.
+AllowSkipFiles off
 BrandingText "Nhắc việc anh Hà · Mã nguồn dựng mới ${APP_VERSION}"
-VIProductVersion "2.0.3.0"
+VIProductVersion "2.0.4.0"
 VIAddVersionKey "ProductName" "${APP_NAME}"
 VIAddVersionKey "ProductVersion" "${APP_VERSION}"
 VIAddVersionKey "FileVersion" "${APP_VERSION}"
@@ -47,10 +49,12 @@ VIAddVersionKey "LegalCopyright" "Mã nguồn dựng mới cho người sử d�
 !insertmacro MUI_UNPAGE_CONFIRM
 !insertmacro MUI_UNPAGE_INSTFILES
 !insertmacro MUI_LANGUAGE "Vietnamese"
+!include /CHARSET=UTF8 "installer_preflight.nsh"
 
 Section "Ứng dụng và tài liệu (bắt buộc)" MainSection
   SectionIn RO
   SetShellVarContext current
+  Call RequireWritableTarget
   SetOutPath "$INSTDIR"
   File /r "${SOURCE_DIR}\*"
   WriteUninstaller "$INSTDIR\Uninstall.exe"
@@ -73,10 +77,18 @@ SectionEnd
 
 Function .onInit
   SetShellVarContext current
+  StrCpy $PreflightOperation "Setup"
+  Call InitMaintenanceGuard
   ${IfNot} ${RunningX64}
     MessageBox MB_ICONSTOP "Bộ cài này cần Windows 64-bit."
     Abort
   ${EndIf}
+FunctionEnd
+
+Function un.onInit
+  SetShellVarContext current
+  StrCpy $PreflightOperation "Uninstall"
+  Call un.InitMaintenanceGuard
 FunctionEnd
 
 Section /o "Tạo lối tắt trên Desktop" DesktopSection
@@ -90,6 +102,7 @@ SectionEnd
 
 Section "Uninstall"
   SetShellVarContext current
+  Call un.RequireWritableTarget
   DeleteRegValue HKCU "Software\Microsoft\Windows\CurrentVersion\Run" "NhacViecAnhHaMoi"
   DeleteRegKey HKCU "${UNINSTALL_KEY}"
   DeleteRegKey HKCU "${APP_KEY}"

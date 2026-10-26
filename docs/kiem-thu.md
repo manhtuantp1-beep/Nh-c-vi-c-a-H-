@@ -1,6 +1,22 @@
 # Kết quả kiểm tra mã nguồn và bộ cài
 
-## Bản 2.0.3 — lịch theo deadline và ghi chú
+## Bản 2.0.4 — kiểm tra khóa tệp trước khi cập nhật
+
+Trạng thái: đang tích hợp và kiểm tra; chưa xác nhận bộ cài, mã nguồn phát hành hoặc SHA256 2.0.4.
+
+Trường hợp người dùng gặp: bộ cài 2.0.3 báo không ghi được `_internal\_sqlite3.pyd` khi cập nhật vào thư mục chương trình cũ. Tệp đang được sử dụng hoặc thư mục không cho ghi đều có thể gây lỗi này. Bản 2.0.4 bổ sung kiểm tra trước khi chép/xóa tệp bằng Windows Restart Manager và kiểm tra quyền ghi, cho phép Thử lại/Hủy mà không tự ép tắt chương trình. Chế độ im lặng phải trả mã lỗi khi chưa thể cập nhật; không coi việc bỏ qua tệp là thành công.
+
+Các kiểm tra Windows cần có bằng chứng trước phát hành:
+
+- Cài và chạy bản 2.0.3 đã phát hành làm nền kiểm tra, rồi thử nâng cấp khi ứng dụng đó còn giữ thư viện thật.
+- Khi bị khóa, bộ cài và bộ gỡ dừng trước khi thay/xóa payload, giữ bản đang cài; không tự kết thúc chương trình.
+- Sau khi đóng chương trình giữ tệp, cài lại thành công; ứng dụng cài xong đạt tự kiểm tra nghiệp vụ, GUI và DPI.
+- Thư mục không ghi được bị từ chối trước khi chép; có thể chọn thư mục chương trình mặc định của tài khoản hiện tại.
+- Công việc, ghi chú, lịch và cài đặt schema 2 của 2.0.3 tiếp tục dùng được. Không lặp nâng cấp schema khi chuyển 2.0.3 sang 2.0.4; giữ dữ liệu qua cài/gỡ.
+
+Liên kết dự kiến: [bản phát hành 2.0.4](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/tag/windows-2.0.4-preview.1). Kết quả mã nguồn, EXE, cài/gỡ, lần dựng, kích thước và SHA256: chờ kiểm chứng. Cách xử lý hiện tại: [cài đặt và lỗi ghi tệp](cai-dat.md).
+
+## Lịch sử bản 2.0.3 — lịch theo deadline và ghi chú
 
 Mã nguồn [69da6b32efd7fef51ddeb04f80fcf64da4caa66a](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/tree/69da6b32efd7fef51ddeb04f80fcf64da4caa66a) đã được kiểm tra trên Linux/Xvfb: toàn bộ **116 kiểm thử** đạt, tự kiểm tra nghiệp vụ và GUI đều đạt. Ma trận giao diện đạt **64 kiểm tra** và tạo **65 ảnh PNG** ở hai cỡ cửa sổ logic 1120×720 / 1366×768, pha mặc định cùng các pha Tk 120/144/192 DPI. Kiểm tra bổ sung lịch tháng sáu hàng có dữ liệu đạt 24 tổ hợp bố cục. Lưới lịch tự thu gọn khoảng cách và có thể cuộn khi thiếu chiều cao, giữ vùng công việc theo ngày phía dưới; kiểm thử hồi quy xác nhận nội dung không tràn khung.
 
