@@ -2,19 +2,39 @@
 
 ## Bản 2.0.4 — kiểm tra khóa tệp trước khi cập nhật
 
-Trạng thái: đang tích hợp và kiểm tra; chưa xác nhận bộ cài, mã nguồn phát hành hoặc SHA256 2.0.4.
+[Lần dựng Windows 40293108356](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/actions/runs/40293108356) đã thành công với mã nguồn [24ac98957eb3eac213cbe18d0556ed92856989eb](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/tree/24ac98957eb3eac213cbe18d0556ed92856989eb). Toàn bộ **116 kiểm thử** đạt, EXE đóng gói vượt qua tự kiểm tra nghiệp vụ/GUI, ma trận **64 kiểm tra bố cục và 65 PNG**. Bộ cài đạt cài/gỡ cơ bản và kiểm tra hồi quy nâng cấp từ đúng bản 2.0.3 đã phát hành.
+
+[Bản phát hành 2.0.4](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/tag/windows-2.0.4-preview.1) đã được xuất bản qua [workflow 40294506634](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/actions/runs/40294506634), có **14 tệp** và trỏ đúng mã nguồn `24ac98957eb3eac213cbe18d0556ed92856989eb`. Bộ cài tải lại có kích thước **17.139.363 byte**, SHA256 `cf0a834749e0303bac1fbb70bd223b9dfbf0b579eeb6728ef911c0a4494b2653`; đối chiếu `SHA256SUMS.txt` đạt.
 
 Trường hợp người dùng gặp: bộ cài 2.0.3 báo không ghi được `_internal\_sqlite3.pyd` khi cập nhật vào thư mục chương trình cũ. Tệp đang được sử dụng hoặc thư mục không cho ghi đều có thể gây lỗi này. Bản 2.0.4 bổ sung kiểm tra trước khi chép/xóa tệp bằng Windows Restart Manager và kiểm tra quyền ghi, cho phép Thử lại/Hủy mà không tự ép tắt chương trình. Chế độ im lặng phải trả mã lỗi khi chưa thể cập nhật; không coi việc bỏ qua tệp là thành công.
 
-Các kiểm tra Windows cần có bằng chứng trước phát hành:
+Các tình huống Windows đã đạt trong kiểm tra hồi quy nâng cấp:
 
 - Cài và chạy bản 2.0.3 đã phát hành làm nền kiểm tra, rồi thử nâng cấp khi ứng dụng đó còn giữ thư viện thật.
 - Khi bị khóa, bộ cài và bộ gỡ dừng trước khi thay/xóa payload, giữ bản đang cài; không tự kết thúc chương trình.
 - Sau khi đóng chương trình giữ tệp, cài lại thành công; ứng dụng cài xong đạt tự kiểm tra nghiệp vụ, GUI và DPI.
-- Thư mục không ghi được bị từ chối trước khi chép; có thể chọn thư mục chương trình mặc định của tài khoản hiện tại.
+- Khóa độc quyền `_sqlite3.pyd` hoặc đặt tệp này chỉ đọc đều khiến bộ cài dừng trước khi thay tệp. Cách chọn lại thư mục chương trình khi thiếu quyền ghi nằm trong hướng dẫn cài đặt.
 - Công việc, ghi chú, lịch và cài đặt schema 2 của 2.0.3 tiếp tục dùng được. Không lặp nâng cấp schema khi chuyển 2.0.3 sang 2.0.4; giữ dữ liệu qua cài/gỡ.
 
-Liên kết dự kiến: [bản phát hành 2.0.4](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/tag/windows-2.0.4-preview.1). Kết quả mã nguồn, EXE, cài/gỡ, lần dựng, kích thước và SHA256: chờ kiểm chứng. Cách xử lý hiện tại: [cài đặt và lỗi ghi tệp](cai-dat.md).
+Báo cáo [installer-upgrade-test.json](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/download/windows-2.0.4-preview.1/installer-upgrade-test.json) tải lại xác nhận `passed=true`, phiên bản 2.0.4 và nền 2.0.3. SHA256 bộ cài nền được ghim là `8f6ea8538fde80905d68083d15717dfa1fa0111ff3d982970f5faa85e1cb3fc4`. Cả **9 tình huống** đạt:
+
+| Tình huống | Kết quả quan sát |
+| --- | --- |
+| Bản 2.0.3 đang chạy và đã nạp `_sqlite3.pyd` | Bộ cài trả mã 32 trong 122 ms, không dừng ứng dụng |
+| Cài bị chặn | Hash toàn bộ tệp chương trình, đăng ký cài đặt và dữ liệu giữ nguyên |
+| Khóa độc quyền `_sqlite3.pyd` | Mã 32 trong 108 ms |
+| `_sqlite3.pyd` chỉ đọc | Mã 5 |
+| Cập nhật sau khi đóng ứng dụng/thả khóa | Mã 0 |
+| Ứng dụng sau nâng cấp | Tự kiểm tra nghiệp vụ/GUI đạt, giữ PerMonitorV2 |
+| Gỡ khi ứng dụng đang chạy | Mã 32 trong 79 ms, chương trình và dữ liệu giữ nguyên |
+| Gỡ sau khi đóng ứng dụng | Mã 0, tệp chương trình được gỡ |
+| Dữ liệu đã lưu sau cài/gỡ | Hash giữ nguyên: công việc, ghi chú, lịch, kết quả buổi, cài đặt và lịch sử thông báo |
+
+Các tình huống này chạy **chế độ im lặng** trên Windows; chúng chưa xác nhận thao tác bấm hộp thoại Thử lại/Hủy. Bộ cài có hộp thoại này theo mã nguồn, nhưng kết quả kiểm tra không suy ra việc đã bấm thử.
+
+Báo cáo bố cục của chính EXE đóng gói xác nhận `version=2.0.4`, `frozen=true`, 64 kiểm tra và 65 PNG. Ở pha native, DPI cửa sổ là 96; tiến trình và cửa sổ đều PerMonitorV2. Các pha Tk 120/144/192 DPI chỉ mô phỏng font/bố cục, không xác nhận Scale trên màn hình vật lý ở từng mức. Khay hệ thống, thông báo Windows và tự chạy khi đăng nhập vẫn cần kiểm tra trên máy sử dụng thực tế. Bộ cài chưa ký số.
+
+Cách xử lý khi cài lỗi và vị trí nhật ký: [cài đặt và lỗi ghi tệp](cai-dat.md).
 
 ## Lịch sử bản 2.0.3 — lịch theo deadline và ghi chú
 

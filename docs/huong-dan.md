@@ -1,6 +1,6 @@
 # Hướng dẫn sử dụng bản dựng mới
 
-Mã nguồn hiện tại: 2.0.4; bộ cài đang chờ kiểm chứng. Giao diện công việc/lịch/ghi chú từ 2.0.3 được giữ lại. Xem [bố cục, phím tắt và cách nâng cấp từ 2.0.x](giao-dien.md), cùng [thay đổi về DPI và chữ hiển thị](readability.md).
+Phiên bản hiện tại: 2.0.4; bộ cài đã được kiểm tra và phát hành. Giao diện công việc/lịch/ghi chú từ 2.0.3 được giữ lại. Xem [bố cục, phím tắt và cách nâng cấp từ 2.0.x](giao-dien.md), cùng [thay đổi về DPI và chữ hiển thị](readability.md).
 
 ## Bắt đầu
 
@@ -60,7 +60,7 @@ Khi sao chép thủ công, Thoát hẳn rồi mới chép `tasks.db` trong `%USE
 
 ## Nâng cấp lên 2.0.4
 
-Lưu công việc/ghi chú đang sửa, sao lưu, Thoát hẳn ứng dụng rồi cài 2.0.4 vào vị trí hiện tại sau khi bản phát hành được xác nhận. Từ 2.0.3 lên 2.0.4 tiếp tục dùng schema 2 và không nâng cấp lại dữ liệu. Với 2.0.0–2.0.2: Lần mở đầu kiểm tra cơ sở dữ liệu, giữ bản `tasks.pre-upgrade-<ngày-giờ>.db` trong thư mục dữ liệu, rồi thêm ghi chú bằng nâng cấp schema 2. Công việc, lịch, lịch sử và cài đặt được giữ lại; ghi chú của việc cũ bắt đầu trống. Tiếp tục dùng 2.0.3 trở lên với dữ liệu đã nâng cấp; bản 2.0.2 trở về trước không đọc schema 2.
+Lưu công việc/ghi chú đang sửa, sao lưu, Thoát hẳn ứng dụng rồi cài 2.0.4 vào vị trí hiện tại. Từ 2.0.3 lên 2.0.4 tiếp tục dùng schema 2 và không nâng cấp lại dữ liệu. Với 2.0.0–2.0.2: Lần mở đầu kiểm tra cơ sở dữ liệu, giữ bản `tasks.pre-upgrade-<ngày-giờ>.db` trong thư mục dữ liệu, rồi thêm ghi chú bằng nâng cấp schema 2. Công việc, lịch, lịch sử và cài đặt được giữ lại; ghi chú của việc cũ bắt đầu trống. Tiếp tục dùng 2.0.3 trở lên với dữ liệu đã nâng cấp; bản 2.0.2 trở về trước không đọc schema 2.
 
 Nếu cài không ghi được `_sqlite3.pyd` hoặc tệp khác, xem [hướng dẫn cài đặt và xử lý lỗi](cai-dat.md).
 

@@ -7,7 +7,7 @@ Lỗi như `Error opening file for writing: D:\NhacViecAnhHaMoi\_internal\_sqlit
 1. Trong thông báo lỗi của bộ cài cũ, chọn **Abort/Hủy** để dừng lần cài đang lỗi. Để bộ cài kết thúc rồi mới mở lại; không chọn Ignore/Bỏ qua vì sẽ thiếu tệp cần thiết.
 2. Nếu còn mở được ứng dụng, lưu công việc/ghi chú đang sửa và chọn **Thoát hẳn ứng dụng** ở thanh bên hoặc menu khay hệ thống.
 3. Nếu không mở được ứng dụng, nhấn **Ctrl+Shift+Esc**, mở **Details/Chi tiết**, chọn đúng **NhacViecAnhHa.exe** rồi **End task/Kết thúc tác vụ**. Kết thúc theo cách này có thể bỏ nội dung chưa lưu, nên ưu tiên bước 2 nếu ứng dụng vẫn dùng được.
-4. Chạy lại bộ cài và hoàn tất cài đặt. Chỉ mở ứng dụng sau khi bộ cài đã kết thúc.
+4. Chạy [bộ cài 2.0.4](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/download/windows-2.0.4-preview.1/NhacViecAnhHa-Setup-2.0.4-x64.exe) và hoàn tất cài đặt. Chỉ mở ứng dụng sau khi bộ cài đã kết thúc.
 
 Nếu vẫn bị khóa, khởi động lại Windows rồi chạy bộ cài trước khi mở ứng dụng. Nếu đã chọn tự chạy khi đăng nhập, ứng dụng có thể mở nền sau khi khởi động lại: hãy Thoát hẳn từ biểu tượng khay hoặc kiểm tra Details trước khi chạy bộ cài.
 
@@ -27,9 +27,20 @@ Không cần xóa cơ sở dữ liệu, thư mục dữ liệu hoặc tự xóa 
 
 ## Cách bộ cài 2.0.4 xử lý trước khi cập nhật
 
-Bản 2.0.4 đang được kiểm chứng trên Windows. Thay đổi được bổ sung là kiểm tra khóa tệp bằng Windows Restart Manager và khả năng ghi thư mục **trước khi chép tệp ứng dụng**. Khi phát hiện tệp đang được sử dụng, bộ cài yêu cầu đóng chương trình liên quan rồi **Thử lại** hoặc **Hủy**; không tự ép kết thúc chương trình. Anh có thể Hủy để quay lại lưu nội dung đang làm.
+Bản 2.0.4 đã qua [kiểm tra nâng cấp trên Windows](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/actions/runs/40293108356) từ bộ cài 2.0.3 đã phát hành. Thay đổi được bổ sung là kiểm tra khóa tệp bằng Windows Restart Manager và khả năng ghi thư mục **trước khi chép tệp ứng dụng**. Khi phát hiện tệp đang được sử dụng, bộ cài yêu cầu đóng chương trình liên quan rồi **Thử lại** hoặc **Hủy**; không tự ép kết thúc chương trình. Anh có thể Hủy để quay lại lưu nội dung đang làm.
 
-Khi điều kiện chưa đạt, chế độ cài im lặng trả mã lỗi thay vì tiếp tục. Bộ gỡ cũng phải kiểm tra trước khi xóa tệp chương trình. Các kết quả chạy thật của bản này được cập nhật tại [phạm vi kiểm tra](kiem-thu.md); không suy ra từ kiểm tra cài bình thường của 2.0.3.
+Khi điều kiện chưa đạt, chế độ cài im lặng trả mã lỗi thay vì tiếp tục. Bộ gỡ cũng phải kiểm tra trước khi xóa tệp chương trình. Báo cáo 9 tình huống nâng cấp từ đúng bộ cài 2.0.3 đã phát hành đã đạt, gồm ứng dụng đang nạp thư viện thật, khóa độc quyền, tệp chỉ đọc, gỡ khi đang chạy và thành công sau khi đóng. Các phép kiểm tra dùng chế độ im lặng; xem [bằng chứng và phạm vi kiểm tra](kiem-thu.md).
+
+## Nhật ký khi cần kiểm tra thêm
+
+Bộ cài/gỡ 2.0.4 ghi kết quả kiểm tra trước khi thay tệp vào:
+
+```text
+%TEMP%\NhacViecAnhHa-Setup-last.log
+%TEMP%\NhacViecAnhHa-Uninstall-last.log
+```
+
+Mỗi lần chạy sẽ thay nội dung nhật ký tương ứng. Nhật ký ghi bước kiểm tra, mã lỗi và đường dẫn đang bị chặn; có thể mở bằng Notepad để xem lý do nếu đã đóng ứng dụng mà vẫn chưa cài được.
 
 ## Nâng cấp dữ liệu
 

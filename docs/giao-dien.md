@@ -6,17 +6,15 @@ Bản 2.0.4 giữ giao diện từ 2.0.3: thanh điều hướng xanh navy, th�
 
 ## Ảnh từ EXE đóng gói trên Windows
 
-Bộ cài 2.0.4 đang được kiểm tra. Các ảnh 2.0.3 đã xác nhận dưới đây minh họa giao diện công việc/lịch/ghi chú được giữ lại; chúng không phải bằng chứng kiểm tra bộ cài 2.0.4.
+Các ảnh 2.0.4 dưới đây được tạo từ chính EXE đóng gói trên Windows và được xuất bản kèm bộ cài. Chúng dùng dữ liệu minh họa tạm thời, không tự thêm vào dữ liệu người dùng. Pha native ghi DPI thực của cửa sổ trên runner là 96.
 
-Các ảnh 2.0.3 dưới đây được tạo từ chính EXE đóng gói trên Windows và đã tải lại từ bản phát hành để xem. Chúng dùng dữ liệu minh họa tạm thời, không tự thêm vào dữ liệu người dùng. Pha native ghi DPI thực của cửa sổ trên runner là 96.
+![Danh sách công việc 2.0.4 trên Windows](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/download/windows-2.0.4-preview.1/tasks-1366x768.png)
 
-![Danh sách công việc 2.0.3 trên Windows](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/download/windows-2.0.3-preview.1/tasks-1366x768.png)
+![Lịch tháng 2.0.4 trên Windows](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/download/windows-2.0.4-preview.1/calendar-tasks-1366x768.png)
 
-![Lịch tháng 2.0.3 trên Windows](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/download/windows-2.0.3-preview.1/calendar-tasks-1366x768.png)
+Xem thêm [cửa sổ ghi chú](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/download/windows-2.0.4-preview.1/notes-dialog.png) và [biểu mẫu công việc](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/download/windows-2.0.4-preview.1/task-dialog.png).
 
-Xem thêm [cửa sổ ghi chú](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/download/windows-2.0.3-preview.1/notes-dialog.png) và [biểu mẫu công việc](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/download/windows-2.0.3-preview.1/task-dialog.png).
-
-Ảnh mô phỏng cỡ chữ và bố cục Tk: [125%](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/download/windows-2.0.3-preview.1/tasks-1366x768-tk120dpi.png), [150%](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/download/windows-2.0.3-preview.1/tasks-1366x768-tk144dpi.png), [200%](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/download/windows-2.0.3-preview.1/tasks-1366x768-tk192dpi.png). Các ảnh này không xác nhận thử nghiệm trên màn hình vật lý được đặt Scale Windows ở từng mức tương ứng. Xem [phạm vi kiểm tra DPI](readability.md#phạm-vi-xác-nhận-dpi).
+Ảnh mô phỏng cỡ chữ và bố cục Tk: [125%](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/download/windows-2.0.4-preview.1/tasks-1366x768-tk120dpi.png), [150%](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/download/windows-2.0.4-preview.1/tasks-1366x768-tk144dpi.png), [200%](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/download/windows-2.0.4-preview.1/tasks-1366x768-tk192dpi.png). Các ảnh này không xác nhận thử nghiệm trên màn hình vật lý được đặt Scale Windows ở từng mức tương ứng. Xem [phạm vi kiểm tra DPI](readability.md#phạm-vi-xác-nhận-dpi).
 
 ## Không gian làm việc
 
@@ -69,7 +67,7 @@ Dữ liệu và báo cáo trên thanh bên mở menu Xuất báo cáo Excel, Sao
 
 1. Trong bản đang dùng, chọn Sao lưu dữ liệu và lưu bản sao ở vị trí dễ tìm. Với 2.0.1, mục này nằm trong Dữ liệu và báo cáo.
 2. Chọn Thoát hẳn trong ứng dụng hoặc menu khay hệ thống. Đóng cửa sổ bằng dấu X chỉ thu nhỏ ứng dụng và chưa đủ để cập nhật.
-3. Sau khi phát hành được xác nhận, tải và chạy [bộ cài 2.0.4](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/download/windows-2.0.4-preview.1/NhacViecAnhHa-Setup-2.0.4-x64.exe). Giữ nguyên thư mục cài đặt đang dùng, rồi hoàn tất cài đặt.
+3. Tải và chạy [bộ cài 2.0.4](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/download/windows-2.0.4-preview.1/NhacViecAnhHa-Setup-2.0.4-x64.exe). Giữ nguyên thư mục cài đặt đang dùng, rồi hoàn tất cài đặt.
 4. Mở ứng dụng và kiểm tra số phiên bản 2.0.4 ở thanh dưới cùng. Công việc, lịch và cài đặt 2.0.x dùng lại cơ sở dữ liệu hiện có tại `%USERPROFILE%\NhacViecAnhHaMoi\data\tasks.db`.
 
 Từ 2.0.3 lên 2.0.4 giữ schema 2, không nâng cấp lại cơ sở dữ liệu. Khi nâng cấp từ 2.0.0–2.0.2, ứng dụng tự nâng cấp schema 1 lên schema 2 để thêm ghi chú, giữ nguyên vị trí và dữ liệu hiện có. Trước nâng cấp, ứng dụng kiểm tra dữ liệu và giữ bản `tasks.pre-upgrade-<ngày-giờ>.db` cùng thư mục. Không cần khôi phục hoặc nhập lại công việc. Sau nâng cấp, dùng 2.0.3 trở lên vì các bản cũ không đọc schema 2. Chức năng Khôi phục vẫn nhận bản sao hợp lệ từ 2.0.0–2.0.2; tệp sao lưu nguồn được giữ nguyên. Dữ liệu của ứng dụng gốc 1.7.0 vẫn nằm riêng và chưa được tự động nhập vào bản mới.

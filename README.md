@@ -6,7 +6,7 @@
 
 ## Cài nâng cấp khi ứng dụng đang chạy
 
-Bản 2.0.4 đang bổ sung kiểm tra trước khi chép tệp: phát hiện chương trình đang giữ tệp bằng Windows Restart Manager và kiểm tra quyền ghi thư mục. Khi chưa thể cập nhật, bộ cài dừng để anh đóng ứng dụng rồi Thử lại hoặc Hủy, thay vì bắt đầu chép một phần. Bộ gỡ cũng kiểm tra trước khi xóa tệp. Chế độ im lặng trả lỗi khi điều kiện chưa đạt; bộ cài không tự ép tắt ứng dụng.
+Bản 2.0.4 bổ sung kiểm tra trước khi chép tệp: phát hiện chương trình đang giữ tệp bằng Windows Restart Manager và kiểm tra quyền ghi thư mục. Khi chưa thể cập nhật, bộ cài dừng để anh đóng ứng dụng rồi Thử lại hoặc Hủy, thay vì bắt đầu chép một phần. Bộ gỡ cũng kiểm tra trước khi xóa tệp. Chế độ im lặng trả lỗi khi điều kiện chưa đạt; bộ cài không tự ép tắt ứng dụng.
 
 Nếu bộ cài 2.0.3 đang báo không ghi được `_internal\_sqlite3.pyd`, chọn **Abort/Hủy**, lưu nội dung rồi **Thoát hẳn** ứng dụng và chạy lại bộ cài. Nếu không mở được ứng dụng, dùng Task Manager để kết thúc đúng `NhacViecAnhHa.exe` rồi thử lại. Xem [hướng dẫn xử lý từng bước](docs/cai-dat.md).
 
@@ -24,26 +24,26 @@ Hướng dẫn thao tác và nâng cấp: [docs/giao-dien.md](docs/giao-dien.md)
 
 ## Tải và cài trên Windows
 
-**2.0.4 đang được kiểm tra và đóng gói. Các liên kết dưới đây dành cho bản phát hành dự kiến, chưa xác nhận sẵn sàng tải.**
+**Bộ cài 2.0.4 đã đạt [kiểm tra Windows và nâng cấp từ 2.0.3](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/actions/runs/40293108356), [được phát hành](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/tag/windows-2.0.4-preview.1) và tải lại để đối chiếu SHA256.**
 
-[Bộ cài Nhắc việc anh Hà 2.0.4 — Windows x64](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/download/windows-2.0.4-preview.1/NhacViecAnhHa-Setup-2.0.4-x64.exe) · [Trang phát hành dự kiến](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/tag/windows-2.0.4-preview.1)
+**[Tải bộ cài Nhắc việc anh Hà 2.0.4 — Windows x64](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/download/windows-2.0.4-preview.1/NhacViecAnhHa-Setup-2.0.4-x64.exe)** · [Trang phát hành](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/tag/windows-2.0.4-preview.1)
 
 Mã nguồn hiện tại là **2.0.4**, dành cho Windows 10/11 x64. [Mã nguồn GitHub](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-).
 
-1. Sau khi phát hành được xác nhận, tải bộ cài và [SHA256SUMS.txt](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/download/windows-2.0.4-preview.1/SHA256SUMS.txt) của cùng bản.
+1. Tải bộ cài và [SHA256SUMS.txt](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/download/windows-2.0.4-preview.1/SHA256SUMS.txt) của cùng bản.
 2. Lưu công việc hoặc ghi chú đang sửa, sao lưu rồi **Thoát hẳn** ứng dụng. Dấu X chỉ thu nhỏ và chưa đủ để cập nhật.
 3. Đối chiếu SHA256, mở bộ cài và làm theo hướng dẫn. Nếu bộ cài yêu cầu đóng chương trình, đóng chương trình được nêu rồi Thử lại; chọn Hủy nếu cần giữ công việc đang mở.
 4. Mở Nhắc việc anh Hà từ menu Start hoặc trang cuối của bộ cài. Dùng bộ cài không cần cài Python hoặc NSIS.
 
 Dữ liệu vẫn nằm tại `%USERPROFILE%\NhacViecAnhHaMoi\data\tasks.db`, tách khỏi thư mục chương trình. **Từ 2.0.3 lên 2.0.4 không đổi schema và không nâng cấp lại dữ liệu.** Nếu đang dùng 2.0.0–2.0.2, lần mở đầu kiểm tra dữ liệu, giữ bản `tasks.pre-upgrade-<ngày-giờ>.db` cùng thư mục và nâng cấp lên schema 2 để thêm ghi chú. Sau nâng cấp, tiếp tục dùng **2.0.3 trở lên**; bản 2.0.2 trở về trước không đọc schema mới.
 
-Kích thước, SHA256, mã nguồn đã kiểm thử và kết quả Windows 2.0.4: chờ xác nhận. Bằng chứng của 2.0.3 và các bản trước được giữ trong [phạm vi kiểm tra](docs/kiem-thu.md).
+Mã nguồn đã kiểm thử: [24ac989](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/tree/24ac98957eb3eac213cbe18d0556ed92856989eb). Kích thước bộ cài **17.139.363 byte**, SHA256 `cf0a834749e0303bac1fbb70bd223b9dfbf0b579eeb6728ef911c0a4494b2653`. Tệp tải lại khớp `SHA256SUMS.txt`. Bằng chứng của 2.0.3 và các bản trước được giữ trong [phạm vi kiểm tra](docs/kiem-thu.md).
 
 Bộ cài chưa ký số. Khay hệ thống, thông báo Windows và tự chạy khi đăng nhập cần được kiểm tra thêm trên máy sử dụng thực tế. [Cách xử lý lỗi ghi tệp khi cài](docs/cai-dat.md).
 
-Ảnh dự kiến từ EXE Windows 2.0.4: [Công việc](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/download/windows-2.0.4-preview.1/tasks-1366x768.png) · [Lịch theo ngày](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/download/windows-2.0.4-preview.1/calendar-tasks-1366x768.png) · [Ghi chú](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/download/windows-2.0.4-preview.1/notes-dialog.png). Ảnh và liên kết tải chỉ được xác nhận sau khi quy trình kiểm tra/phát hành hoàn tất.
+Ảnh từ EXE Windows 2.0.4: [Công việc](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/download/windows-2.0.4-preview.1/tasks-1366x768.png) · [Lịch theo ngày](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/download/windows-2.0.4-preview.1/calendar-tasks-1366x768.png) · [Ghi chú](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/download/windows-2.0.4-preview.1/notes-dialog.png). Ảnh dùng dữ liệu minh họa tạm thời; báo cáo EXE xác nhận 64 kiểm tra bố cục và 65 PNG, DPI thực của cửa sổ ở pha native là 96.
 
-Ảnh mô phỏng font/bố cục Tk dự kiến: [125%](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/download/windows-2.0.4-preview.1/tasks-1366x768-tk120dpi.png) · [150%](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/download/windows-2.0.4-preview.1/tasks-1366x768-tk144dpi.png) · [200%](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/download/windows-2.0.4-preview.1/tasks-1366x768-tk192dpi.png). Mô phỏng trong ứng dụng không xác nhận Windows đã đổi Scale sang từng mức đó.
+Ảnh mô phỏng font/bố cục Tk: [125%](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/download/windows-2.0.4-preview.1/tasks-1366x768-tk120dpi.png) · [150%](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/download/windows-2.0.4-preview.1/tasks-1366x768-tk144dpi.png) · [200%](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/download/windows-2.0.4-preview.1/tasks-1366x768-tk192dpi.png). Mô phỏng trong ứng dụng không xác nhận Windows đã đổi Scale sang từng mức đó.
 
 ## Chạy mã nguồn
 
@@ -122,7 +122,7 @@ Trên GitHub, mở Actions → Build Windows installer → Run workflow để d�
 
 ## Phạm vi kiểm tra
 
-**2.0.4**: đang kiểm tra bộ cài khi bản cũ đang chạy/đang giữ thư viện, quyền ghi thư mục, thử lại sau khi đóng, gỡ cài đặt và bảo toàn dữ liệu. Chưa dùng kết quả 2.0.3 để xác nhận bản sửa bộ cài. Xem [chi tiết](docs/kiem-thu.md).
+**2.0.4**: [lần dựng Windows 40293108356](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/actions/runs/40293108356) đạt 116 kiểm thử, tự kiểm tra EXE/GUI, 64 kiểm tra bố cục/65 PNG, cài/gỡ và kiểm tra nâng cấp từ bản 2.0.3 đã phát hành khi thư viện đang bị giữ. Bộ cài/gỡ dừng trước khi thay tệp bị khóa, thành công sau khi đóng chương trình; dữ liệu được giữ. Báo cáo [9 tình huống nâng cấp](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/download/windows-2.0.4-preview.1/installer-upgrade-test.json) đạt, gồm mã 32 khi bản cũ đang chạy hoặc thư viện bị khóa, mã 5 khi thư viện chỉ đọc và mã 0 sau khi đóng. [Lần xuất bản 40294506634](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/actions/runs/40294506634) tạo 14 tệp; bộ cài tải lại khớp SHA256. Xem [chi tiết](docs/kiem-thu.md).
 
 Lịch sử **2.0.3**: mã nguồn [69da6b3](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/tree/69da6b32efd7fef51ddeb04f80fcf64da4caa66a) đạt toàn bộ 116 kiểm thử trên Linux/Xvfb, tự kiểm tra nghiệp vụ và GUI, cùng 64 kiểm tra bố cục/65 ảnh PNG. Ma trận lịch tháng sáu hàng có dữ liệu đạt 24 tổ hợp. [Lần dựng Windows 40289470721](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/actions/runs/40289470721) cũng đạt 116 kiểm thử, tự kiểm tra EXE/GUI/PerMonitorV2, 64 kiểm tra bố cục/65 PNG và cài/gỡ giữ dữ liệu. [Bản phát hành](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/tag/windows-2.0.3-preview.1) có 13 tệp; bộ cài tải lại khớp SHA256. Xem [lần xuất bản 40289806541](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/actions/runs/40289806541). Xem [kết quả kiểm tra](docs/kiem-thu.md).
 
