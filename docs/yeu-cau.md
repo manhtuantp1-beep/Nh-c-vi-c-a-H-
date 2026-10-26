@@ -1,15 +1,15 @@
 # Phạm vi dựng lại mã nguồn
 
-Nguồn tham khảo là tài liệu PDF 14 trang, README và cấu trúc bộ cài 1.7.0 đã cung cấp, cùng các yêu cầu bổ sung về lịch tháng/năm và hai cách lọc công việc. Mã nguồn mới không giải biên dịch để tuyên bố khôi phục mã dự án gốc, không kèm dữ liệu cá nhân và không tự chạy bộ cài đã tải lên.
+Nguồn tham khảo là tài liệu PDF 14 trang, README và cấu trúc bộ cài 1.7.0 đã cung cấp, cùng các yêu cầu bổ sung về lịch tháng/năm, hai cách lọc công việc, tổng việc theo deadline trong lịch và ghi chú từng việc. Mã nguồn mới không giải biên dịch để tuyên bố khôi phục mã dự án gốc, không kèm dữ liệu cá nhân và không tự chạy bộ cài đã tải lên.
 
 ## Nghiệp vụ được xây dựng
 
-- Công việc: tạo/sửa, deadline, phân loại, nội dung/yêu cầu, mã tự động, bắt đầu/tạm dừng/hoàn thành/hủy/mở lại, tìm kiếm và lọc.
+- Công việc: tạo/sửa, deadline, phân loại, nội dung/yêu cầu, ghi chú riêng, mã tự động, bắt đầu/tạm dừng/hoàn thành/hủy/mở lại, tìm kiếm và lọc.
 - Hai phạm vi Cần làm: toàn bộ chưa hoàn thành và nhóm Cần làm hiện tại.
-- Lịch: xem tuần/tháng/năm; một lần, hằng tuần/tháng/năm; giới hạn chu kỳ, xử lý ngày thiếu, kết quả từng lần, nhắc và hoãn.
+- Lịch: xem tuần/tháng/năm; tổng hợp công việc theo ngày deadline, mở thẻ việc trong ngày giống danh sách công việc, tách lịch hẹn; một lần, hằng tuần/tháng/năm; giới hạn chu kỳ, xử lý ngày thiếu, kết quả từng lần, nhắc và hoãn.
 - Nhắc việc: thiết lập giờ/ngày trước deadline, nhắc gấp, các mốc lịch, dấu chống trùng được lưu trong SQLite.
-- Excel: toàn bộ công việc, buổi lịch theo khoảng và định nghĩa lịch; bảng có tên cho PivotTable.
-- Dữ liệu: SQLite riêng cho bản dựng mới, sao lưu nhất quán, kiểm tra schema khi khôi phục và giữ bản dự phòng.
+- Excel: toàn bộ công việc, buổi lịch theo khoảng và định nghĩa lịch; cột ghi chú, bảng có tên cho PivotTable.
+- Dữ liệu: SQLite riêng cho bản dựng mới, sao lưu nhất quán, kiểm tra schema khi khôi phục và giữ bản dự phòng; nâng cấp schema 1 sang 2 trước khi dùng ghi chú, giữ bản trước nâng cấp và tiếp nhận bản sao lưu cũ hợp lệ.
 - Phân phối: mã nguồn, dependency đã ghim phiên bản, script PyInstaller/NSIS và workflow build Windows.
 
 ## Giới hạn thiết kế
@@ -25,7 +25,7 @@ Nguồn tham khảo là tài liệu PDF 14 trang, README và cấu trúc bộ c�
 
 1. Bộ kiểm thử nghiệp vụ chạy đủ, không coi zero-test là thành công.
 2. Tạo/sửa/chuyển trạng thái và các bộ lọc trên cơ sở dữ liệu trống; mã trùng phút vẫn riêng biệt.
-3. Lịch qua cuối tháng, tháng thiếu ngày, năm nhuận và giới hạn lặp; đánh dấu một buổi không dừng chu kỳ.
+3. Tổng công việc theo ngày khớp deadline và danh sách ngày, đổi deadline không trùng; ghi chú đúng công việc, nhiều dòng có dấu được giữ. Lịch qua cuối tháng, tháng thiếu ngày, năm nhuận và giới hạn lặp; đánh dấu một buổi không dừng chu kỳ.
 4. Thông báo không trùng sau khởi động lại, không nhắc lịch đã hết giờ, hoãn không vượt giờ kết thúc.
-5. Excel mở được và chứa đủ dữ liệu; sao lưu/khôi phục nhất quán, từ chối cơ sở dữ liệu không đúng schema.
+5. Excel mở được và chứa đủ dữ liệu và ghi chú; sao lưu/khôi phục nhất quán, từ chối cơ sở dữ liệu không đúng schema.
 6. Windows: tạo EXE, chạy tự kiểm tra của EXE, cài/mở/gỡ, dữ liệu cũ không bị xóa, khay hệ thống và tự chạy hoạt động.

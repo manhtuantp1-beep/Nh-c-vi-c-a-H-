@@ -1,38 +1,40 @@
-# Nhắc việc anh Hà — 2.0.2
+# Nhắc việc anh Hà — 2.0.3
 
 Ứng dụng desktop được viết mới từ hướng dẫn sử dụng bản 1.7.0 và yêu cầu bổ sung trong cuộc trao đổi. Đây là dự án mã nguồn mới, không phải mã nguồn khôi phục từ bộ cài cũ. Không kèm công việc cá nhân hoặc dữ liệu mẫu tự nạp vào cơ sở dữ liệu thật.
 
 Ứng dụng quản lý công việc, hiển thị lịch tuần/tháng/năm, tạo lịch lặp, nhắc việc, xuất Excel và sao lưu. Giao diện dùng Python Tkinter; dữ liệu dùng SQLite trong tài khoản hiện tại.
 
-## Giao diện và chữ hiển thị trong 2.0.2
+## Công việc theo deadline và ghi chú trong 2.0.3
 
-- Khai báo nhận biết DPI trong EXE và khởi tạo trước cửa sổ Tk để tránh Windows phóng ảnh chữ từ một cửa sổ không nhận biết DPI. Cỡ chữ và bố cục lấy DPI thực của cửa sổ lúc mở ứng dụng.
-- Thanh điều hướng xanh navy, vùng nội dung trắng và chữ đậm màu. Chữ nội dung 12 pt, tên công việc 13 pt đậm, thông tin phụ 11 pt; ưu tiên Segoe UI trên Windows.
-- Công việc hiển thị theo từng hàng gọn: tên và nội dung bên trái, trạng thái, hạn hoàn thành và thao tác bên phải. Ba ô tổng quan cho biết việc chưa bắt đầu, đang làm và quá hạn.
-- Bộ lọc và các nút biểu mẫu tự sắp xếp theo chỗ trống. **Bộ lọc +** mở thêm sắp xếp và khoảng ngày; **Dữ liệu và báo cáo** gom các thao tác Excel, sao lưu và khôi phục.
-- Lịch Tuần/Tháng/Năm và biểu mẫu giữ nút lưu/đóng ở vùng riêng; nội dung có thể cuộn khi màn hình thấp.
+- Lịch Tuần/Tháng/Năm tự tổng hợp công việc theo **ngày deadline**. Số việc và số lịch hẹn hiển thị riêng, tránh nhầm một việc với một buổi lịch.
+- Bấm ngày để xem tab **Công việc** với cùng thẻ thông tin và các nút Chi tiết, Ghi chú, Bắt đầu, Hoàn thành hoặc Mở lại như trang công việc. Lịch giữ mọi trạng thái, gồm cả đã hoàn thành và đã hủy, để tra cứu; mỗi thẻ ghi rõ trạng thái.
+- Mỗi việc có **Ghi chú** riêng để lưu tiến độ và điều cần chú ý. Có thể sửa nhanh bằng nút Ghi chú hoặc sửa trong Chi tiết; ghi chú đi cùng dữ liệu sao lưu và báo cáo Excel.
+- Tab **Lịch hẹn** giữ các buổi một lần/lặp, kết quả từng buổi và thao tác nhắc sau.
+- Giữ cách hiển thị DPI từ 2.0.2: thanh điều hướng navy, chữ nội dung 12 pt, tên việc 13 pt đậm và thông tin phụ 11 pt, ưu tiên Segoe UI trên Windows.
 
-Hướng dẫn chữ hiển thị và nâng cấp: [docs/readability.md](docs/readability.md). Thao tác giao diện: [docs/giao-dien.md](docs/giao-dien.md).
+Hướng dẫn thao tác và nâng cấp: [docs/giao-dien.md](docs/giao-dien.md). Chi tiết chữ và DPI: [docs/readability.md](docs/readability.md).
 
 ## Tải và cài trên Windows
 
-**[Tải bộ cài Nhắc việc anh Hà 2.0.2 — Windows x64](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/download/windows-2.0.2-preview.1/NhacViecAnhHa-Setup-2.0.2-x64.exe)**
+**Bộ cài 2.0.3 đã được [dựng và kiểm tra trên Windows](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/actions/runs/40289470721), [phát hành](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/tag/windows-2.0.3-preview.1) và tải lại để đối chiếu SHA256.**
 
-Mã nguồn hiện tại là **2.0.2**, dành cho Windows 10/11 x64. Bộ cài đã được dựng và kiểm tra thành công trong [lần dựng Windows 40255800533](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/actions/runs/40255800533), rồi [phát hành tại đây](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/tag/windows-2.0.2-preview.1). Mã nguồn: [GitHub](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-).
+**[Tải bộ cài Nhắc việc anh Hà 2.0.3 — Windows x64](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/download/windows-2.0.3-preview.1/NhacViecAnhHa-Setup-2.0.3-x64.exe)** · [Trang phát hành](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/tag/windows-2.0.3-preview.1)
 
-1. Tải bộ cài ở liên kết trên và [SHA256SUMS.txt](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/download/windows-2.0.2-preview.1/SHA256SUMS.txt) trong cùng bản phát hành.
+Mã nguồn hiện tại là **2.0.3**, dành cho Windows 10/11 x64. [Mã nguồn GitHub](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-).
+
+1. Tải bộ cài và [SHA256SUMS.txt](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/download/windows-2.0.3-preview.1/SHA256SUMS.txt) của cùng bản.
 2. Đối chiếu SHA256, mở bộ cài và làm theo hướng dẫn. Dùng bộ cài không cần cài Python hoặc NSIS.
-3. Mở Nhắc việc anh Hà từ menu Start hoặc trang cuối của bộ cài. Dữ liệu mới nằm riêng tại `%USERPROFILE%\NhacViecAnhHaMoi\data\tasks.db`.
+3. Mở Nhắc việc anh Hà từ menu Start hoặc trang cuối của bộ cài. Dữ liệu vẫn nằm tại `%USERPROFILE%\NhacViecAnhHaMoi\data\tasks.db`.
 
-Nếu đang dùng 2.0.0 hoặc 2.0.1, sao lưu rồi **Thoát hẳn** ứng dụng trước khi chạy bộ cài mới. Cài vào cùng vị trí sẽ dùng lại dữ liệu 2.0.x; không cần khôi phục hoặc nhập lại công việc.
+Nếu đang dùng 2.0.0–2.0.2, sao lưu rồi **Thoát hẳn** ứng dụng trước khi chạy bộ cài mới. Lần mở đầu tự kiểm tra và nâng cấp cơ sở dữ liệu để thêm ghi chú, giữ công việc, lịch và cài đặt. Bản sao `tasks.pre-upgrade-<ngày-giờ>.db` được giữ cùng thư mục trước nâng cấp. Sau khi nâng cấp dữ liệu, tiếp tục dùng **2.0.3 trở lên**; bản 2.0.2 trở về trước không đọc schema mới.
 
-Kích thước bộ cài: 17.114.081 byte. SHA256: `9765523bf93c57e690d77b04d4f8d1c05f6f24cad18ca5f29f747e60071e3e99`.
+Kích thước bộ cài: **17.124.494 byte**. SHA256: `8f6ea8538fde80905d68083d15717dfa1fa0111ff3d982970f5faa85e1cb3fc4`. Tệp đã tải lại và khớp `SHA256SUMS.txt`. Bằng chứng của các bản trước được giữ trong [phạm vi kiểm tra](docs/kiem-thu.md).
 
-Bộ cài chưa ký số; Windows có thể hiển thị cảnh báo SmartScreen. Khay hệ thống, thông báo Windows và tự chạy khi đăng nhập cần được kiểm tra thêm trên máy sử dụng thực tế.
+Bộ cài chưa ký số. Khay hệ thống, thông báo Windows và tự chạy khi đăng nhập cần được kiểm tra thêm trên máy sử dụng thực tế.
 
-Ảnh từ EXE đóng gói trên Windows ở DPI thực của runner: [Danh sách công việc](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/download/windows-2.0.2-preview.1/tasks-1366x768.png) · [Lịch tháng](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/download/windows-2.0.2-preview.1/calendar-month-1366x768.png) · [Biểu mẫu công việc](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/download/windows-2.0.2-preview.1/task-dialog.png). Xem ảnh trong [hướng dẫn giao diện](docs/giao-dien.md).
+Ảnh từ EXE Windows 2.0.3 ở DPI thực của runner: [Công việc](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/download/windows-2.0.3-preview.1/tasks-1366x768.png) · [Lịch và công việc theo ngày](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/download/windows-2.0.3-preview.1/calendar-tasks-1366x768.png) · [Ghi chú](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/download/windows-2.0.3-preview.1/notes-dialog.png). Ảnh dùng dữ liệu minh họa tạm thời; không tự thêm công việc vào cơ sở dữ liệu của người dùng.
 
-Ảnh mô phỏng tỷ lệ font/bố cục Tk: [125%](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/download/windows-2.0.2-preview.1/tasks-1366x768-tk120dpi.png) · [150%](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/download/windows-2.0.2-preview.1/tasks-1366x768-tk144dpi.png) · [200%](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/download/windows-2.0.2-preview.1/tasks-1366x768-tk192dpi.png). Đây là mô phỏng trong ứng dụng, không phải bằng chứng thay đổi Scale của Windows sang từng mức đó.
+Ảnh mô phỏng tỷ lệ font/bố cục Tk: [125%](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/download/windows-2.0.3-preview.1/tasks-1366x768-tk120dpi.png) · [150%](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/download/windows-2.0.3-preview.1/tasks-1366x768-tk144dpi.png) · [200%](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/download/windows-2.0.3-preview.1/tasks-1366x768-tk192dpi.png). Mô phỏng trong ứng dụng không xác nhận Windows đã đổi Scale sang từng mức đó.
 
 ## Chạy mã nguồn
 
@@ -66,7 +68,7 @@ python3 -m unittest discover -s tests -v
 %USERPROFILE%\NhacViecAnhHaMoi\data\tasks.db
 ```
 
-Trên Linux, đường dẫn tương ứng là `~/NhacViecAnhHaMoi/data/tasks.db`. Cơ sở dữ liệu được tạo trống lần đầu. Bản mới không ghi vào `~/NhacViecAnhHa/data/tasks.db` của bản 1.7.0. Chức năng khôi phục chỉ nhận bản sao lưu đúng schema của bản dựng mới; chưa có mẫu cơ sở dữ liệu cũ để xác nhận chuyển đổi. Không đổi tên cơ sở dữ liệu bản 1.7.0 rồi chép đè vào bản mới.
+Trên Linux, đường dẫn tương ứng là `~/NhacViecAnhHaMoi/data/tasks.db`. Cơ sở dữ liệu được tạo trống lần đầu. Bản mới không ghi vào `~/NhacViecAnhHa/data/tasks.db` của bản 1.7.0. Chức năng khôi phục nhận cơ sở dữ liệu hợp lệ của bản dựng mới, gồm schema 1 từ 2.0.0–2.0.2 và schema 2 từ 2.0.3. Bản sao schema 1 được đọc, kiểm tra và nâng cấp trên tệp tạm trước khi thay dữ liệu hiện tại; tệp nguồn không bị sửa. Chưa có mẫu cơ sở dữ liệu 1.7.0 để xác nhận chuyển đổi. Không đổi tên cơ sở dữ liệu bản 1.7.0 rồi chép đè vào bản mới.
 
 ## Hai lựa chọn công việc
 
@@ -76,7 +78,9 @@ Trên Linux, đường dẫn tương ứng là `~/NhacViecAnhHaMoi/data/tasks.db
 
 ## Lịch tuần, tháng, năm
 
-Các chế độ xem dùng chung dữ liệu. Lịch có thể diễn ra một lần, lặp hằng tuần, hằng tháng hoặc hằng năm. Lịch tháng/năm lấy ngày của ngày bắt đầu làm mốc lặp. Khi tháng thiếu ngày, chọn về ngày cuối tháng hoặc bỏ qua; quy tắc gốc không bị đổi sau tháng thiếu ngày. Ngày 29/2 được xử lý theo cùng chính sách. Có thể chọn các thứ trong tuần, kết thúc lặp và các mốc nhắc trước.
+Các chế độ xem dùng chung công việc theo ngày deadline và các lịch hẹn. Số công việc trên một ngày gồm Cần làm, Đang thực hiện, Đã hoàn thành và Đã hủy; chuyển trạng thái không tạo thêm mục. Đổi deadline sẽ chuyển việc sang ngày mới. Bấm ngày để xem thông tin và thao tác trên chính công việc đang có; không cần tạo thêm lịch hẹn.
+
+Lịch hẹn có thể diễn ra một lần, lặp hằng tuần, hằng tháng hoặc hằng năm. Lịch tháng/năm lấy ngày của ngày bắt đầu làm mốc lặp. Khi tháng thiếu ngày, chọn về ngày cuối tháng hoặc bỏ qua; quy tắc gốc không bị đổi sau tháng thiếu ngày. Ngày 29/2 được xử lý theo cùng chính sách. Có thể chọn các thứ trong tuần, kết thúc lặp và các mốc nhắc trước.
 
 Mỗi lần diễn ra có kết quả riêng: hoàn thành, bỏ qua hoặc mở lại. Hoàn thành một buổi không dừng chu kỳ lặp. Lịch dùng dương lịch, chưa có lịch âm hoặc quy tắc như “thứ Hai đầu tiên của tháng”.
 
@@ -99,17 +103,19 @@ Nếu Python Launcher hoặc NSIS ở vị trí khác:
 Script tạo môi trường `.venv-build`, cài dependency đã ghim phiên bản, chạy `unittest`, tạo EXE bằng PyInstaller, kiểm tra `--self-test` và `--gui-smoke-test` cùng báo cáo JSON, rồi tạo bộ cài NSIS. Kết quả nằm ngay trên máy Windows:
 
 ```text
-dist\NhacViecAnhHa-Setup-2.0.2-x64.exe
+dist\NhacViecAnhHa-Setup-2.0.3-x64.exe
 dist\SHA256SUMS.txt
 ```
 
 Bộ cài chạy theo tài khoản hiện tại, có lựa chọn Desktop và tự chạy khi đăng nhập, không cần quyền quản trị theo cấu hình mặc định. Gỡ cài đặt giữ lại dữ liệu. Bộ cài chưa có chữ ký số; máy áp dụng Application Control có thể cần IT phê duyệt hoặc chữ ký phù hợp.
 
-Trên GitHub, mở Actions → Build Windows installer → Run workflow để dựng lại bộ cài. Workflow chạy cả cài/gỡ im lặng và kiểm tra giữ nguyên tệp dữ liệu đánh dấu trên runner. Artifact của bản 2.0.2 có tên `NhacViecAnhHa-Windows-x64-2.0.2`, chứa bộ cài, checksum và báo cáo tự kiểm tra. Workflow Publish Windows installer xác minh artifact của lần dựng thành công trước khi xuất bản bản phát hành thử nghiệm.
+Trên GitHub, mở Actions → Build Windows installer → Run workflow để dựng lại bộ cài. Workflow chạy cả cài/gỡ im lặng và kiểm tra giữ nguyên tệp dữ liệu đánh dấu trên runner. Artifact của bản 2.0.3 có tên `NhacViecAnhHa-Windows-x64-2.0.3`, chứa bộ cài, checksum và báo cáo tự kiểm tra. Workflow Publish Windows installer xác minh artifact của lần dựng thành công trước khi xuất bản bản phát hành thử nghiệm.
 
 ## Phạm vi kiểm tra
 
-**2.0.2**: mã nguồn [897adf3](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/tree/897adf34821c12f68951ad75dc2c1ebf9a665362) đã đạt 89 kiểm thử trên Windows; EXE đóng gói đạt kiểm tra nghiệp vụ, GUI và xác nhận PerMonitorV2 của cả tiến trình lẫn cửa sổ. Cùng EXE đó đạt 48 kiểm tra bố cục/ảnh chụp; bộ cài đã qua kiểm tra cài/gỡ, GUI sau cài và giữ nguyên dữ liệu. Bộ 89 kiểm thử và 48 kiểm tra bố cục cũng đạt trên Linux/Xvfb. Các mức Tk tương đương 125%/150%/200% là mô phỏng cỡ chữ và bố cục, tách riêng với DPI thực của màn hình Windows. Xem [phạm vi kiểm tra](docs/kiem-thu.md) và [giải thích DPI](docs/readability.md).
+**2.0.3**: mã nguồn [69da6b3](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/tree/69da6b32efd7fef51ddeb04f80fcf64da4caa66a) đạt toàn bộ 116 kiểm thử trên Linux/Xvfb, tự kiểm tra nghiệp vụ và GUI, cùng 64 kiểm tra bố cục/65 ảnh PNG. Ma trận lịch tháng sáu hàng có dữ liệu đạt 24 tổ hợp. [Lần dựng Windows 40289470721](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/actions/runs/40289470721) cũng đạt 116 kiểm thử, tự kiểm tra EXE/GUI/PerMonitorV2, 64 kiểm tra bố cục/65 PNG và cài/gỡ giữ dữ liệu. [Bản phát hành](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/tag/windows-2.0.3-preview.1) có 13 tệp; bộ cài tải lại khớp SHA256. Xem [lần xuất bản 40289806541](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/actions/runs/40289806541). Xem [kết quả kiểm tra](docs/kiem-thu.md).
+
+Lịch sử **2.0.2**: mã nguồn [897adf3](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/tree/897adf34821c12f68951ad75dc2c1ebf9a665362) đã đạt 89 kiểm thử trên Windows; EXE đóng gói đạt kiểm tra nghiệp vụ, GUI và xác nhận PerMonitorV2 của cả tiến trình lẫn cửa sổ. Cùng EXE đó đạt 48 kiểm tra bố cục/ảnh chụp; bộ cài đã qua kiểm tra cài/gỡ, GUI sau cài và giữ nguyên dữ liệu. Bộ 89 kiểm thử và 48 kiểm tra bố cục cũng đạt trên Linux/Xvfb. Các mức Tk tương đương 125%/150%/200% là mô phỏng cỡ chữ và bố cục, tách riêng với DPI thực của màn hình Windows. Xem [phạm vi kiểm tra](docs/kiem-thu.md) và [giải thích DPI](docs/readability.md).
 
 Lịch sử **2.0.1**: mã nguồn [6dc1acf](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/tree/6dc1acf1db2d04e6f9972e11d0fb5801f590496b) đã đạt 77 kiểm thử trên Windows, kiểm tra `--self-test` / `--gui-smoke-test` của EXE, 24 kiểm tra bố cục ở cỡ chữ mặc định và Tk 120 DPI, cùng kiểm tra cài/gỡ giữ nguyên dữ liệu. Xem [lần dựng 39719044251](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/actions/runs/39719044251) và [chi tiết kiểm thử](docs/kiem-thu.md).
 

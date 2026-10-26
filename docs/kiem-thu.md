@@ -1,6 +1,37 @@
 # Kết quả kiểm tra mã nguồn và bộ cài
 
-## Bản 2.0.2 — DPI và khả năng đọc
+## Bản 2.0.3 — lịch theo deadline và ghi chú
+
+Mã nguồn [69da6b32efd7fef51ddeb04f80fcf64da4caa66a](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/tree/69da6b32efd7fef51ddeb04f80fcf64da4caa66a) đã được kiểm tra trên Linux/Xvfb: toàn bộ **116 kiểm thử** đạt, tự kiểm tra nghiệp vụ và GUI đều đạt. Ma trận giao diện đạt **64 kiểm tra** và tạo **65 ảnh PNG** ở hai cỡ cửa sổ logic 1120×720 / 1366×768, pha mặc định cùng các pha Tk 120/144/192 DPI. Kiểm tra bổ sung lịch tháng sáu hàng có dữ liệu đạt 24 tổ hợp bố cục. Lưới lịch tự thu gọn khoảng cách và có thể cuộn khi thiếu chiều cao, giữ vùng công việc theo ngày phía dưới; kiểm thử hồi quy xác nhận nội dung không tràn khung.
+
+Trên Windows, [lần dựng 40289470721](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/actions/runs/40289470721) đã thành công với cùng mã nguồn trên. Toàn bộ **116 kiểm thử** đạt; EXE đóng gói vượt qua tự kiểm tra nghiệp vụ, GUI và xác nhận PerMonitorV2 của tiến trình/cửa sổ. Chính EXE đạt **64 kiểm tra bố cục** và tạo **65 PNG**. Bộ cài đạt kiểm tra cài/gỡ tự động, tự kiểm tra nghiệp vụ/GUI và PerMonitorV2 sau cài, đồng thời giữ nguyên các tệp dữ liệu đánh dấu.
+
+Ảnh native được chụp trên runner Windows có màn hình 1920×1080; các cửa sổ thử nghiệm lớn hơn được ghép từ vùng hiển thị thật theo điểm ảnh gốc, không co giãn ảnh. Các mức Tk 120/144/192 DPI vẫn là mô phỏng font/bố cục. [Bản phát hành 2.0.3](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/tag/windows-2.0.3-preview.1) đã xuất bản thành công qua [workflow 40289806541](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/actions/runs/40289806541), từ đúng artifact của mã nguồn `69da6b32efd7fef51ddeb04f80fcf64da4caa66a`. Bản phát hành có **13 tệp**. Bộ cài tải lại có kích thước **17.124.494 byte**, SHA256 `8f6ea8538fde80905d68083d15717dfa1fa0111ff3d982970f5faa85e1cb3fc4`; đối chiếu với `SHA256SUMS.txt` đạt.
+
+Các tình huống được kiểm tra trong mã nguồn, tự kiểm tra EXE và ma trận giao diện:
+
+- Số việc trong lịch khớp tập công việc có deadline đúng ngày, tính mỗi việc một lần và tách số lịch hẹn. Giữ mọi trạng thái để tra cứu.
+- Bấm ngày hiển thị cùng thẻ công việc và các thao tác; đổi deadline chuyển việc sang ngày mới; chuyển trạng thái và lưu ghi chú cập nhật chính bản ghi đó.
+- Ghi chú nhiều dòng có dấu lưu qua tạo/sửa, cửa sổ ghi chú, Excel và sao lưu/khôi phục; đóng khi chưa lưu giữ đúng quyết định người dùng.
+- Nâng cấp cơ sở dữ liệu schema 1 đã kiểm tra lên schema 2, giữ dữ liệu và bản sao trước nâng cấp. Khôi phục sao lưu cũ qua tệp tạm, giữ nguyên tệp nguồn; cơ sở dữ liệu lạ hoặc hỏng bị từ chối.
+- Kiểm tra bố cục công việc, lịch, tab lịch hẹn, biểu mẫu và cửa sổ ghi chú ở các cỡ cửa sổ/tỷ lệ font; kiểm tra EXE Windows, cài/gỡ và dữ liệu được giữ lại.
+
+Các liên kết đã xuất bản: [bản phát hành 2.0.3](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/tag/windows-2.0.3-preview.1), [lịch với công việc theo ngày](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/download/windows-2.0.3-preview.1/calendar-tasks-1366x768.png), [ghi chú](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/download/windows-2.0.3-preview.1/notes-dialog.png). Ảnh lịch và ghi chú được tải lại, xem trực tiếp để kiểm tra. Báo cáo bố cục xác nhận `version=2.0.3`, `frozen=true`, chương trình `NhacViecAnhHa.exe`, 64 kiểm tra và 65 ảnh; ở pha native, DPI cửa sổ là 96 và cả tiến trình/cửa sổ đều PerMonitorV2. Báo cáo GUI cũng đạt, gồm lưu ghi chú và thẻ việc theo deadline.
+
+Lệnh kiểm tra trên Linux với màn hình ảo:
+
+```sh
+DISPLAY=:99 python -m unittest discover -s tests -v
+python -m nhacviec --self-test --self-test-report /tmp/nhacviec-2.0.3-core.json
+DISPLAY=:99 python -m nhacviec --gui-smoke-test --self-test-report /tmp/nhacviec-2.0.3-gui.json
+DISPLAY=:104 python -m nhacviec --capture-ui /tmp/nhacviec-2.0.3-ui
+```
+
+Tự kiểm tra nghiệp vụ đã xác nhận ghi chú có dấu qua lưu trữ, Excel và sao lưu/khôi phục. Tự kiểm tra GUI đã xác nhận thẻ việc theo deadline ở cả ba chế độ lịch và sửa ghi chú từ cửa sổ thật. Các kiểm thử tích hợp còn kiểm tra luồng tạo việc từ ngày đang chọn, cập nhật deadline, thao tác trạng thái và bảo vệ ghi chú chưa lưu khi thoát.
+
+Các pha Tk tương đương 125%/150%/200% mô phỏng font và bố cục ứng dụng; không xác nhận các mức Scale trên màn hình Windows vật lý. Khay hệ thống, thông báo Windows và tự chạy khi đăng nhập vẫn cần kiểm tra thêm trên máy sử dụng thực tế. Bộ cài chưa ký số.
+
+## Lịch sử bản 2.0.2 — DPI và khả năng đọc
 
 Ngày 26/10/2026: bản 2.0.2 đã đạt toàn bộ 89 kiểm thử trên Linux/Xvfb. Lệnh `python -m nhacviec --capture-ui` đạt 48 kiểm tra bố cục và tạo 48 ảnh PNG qua pha tỷ lệ mặc định cùng các pha Tk 120/144/192 DPI.
 
@@ -10,7 +41,7 @@ Trên Windows, [lần dựng 40255800533](https://github.com/manhtuantp1-beep/Nh
 
 Manifest trích từ chính EXE ứng dụng trong bộ cài đã phát hành xác nhận `dpiAware=true/pm`, `dpiAwareness=PerMonitorV2,PerMonitor` và `gdiScaling=false`. Đây là đối chiếu tệp nhị phân phát hành, bổ sung cho trạng thái DPI được đo khi EXE chạy.
 
-[Bản phát hành 2.0.2](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/tag/windows-2.0.2-preview.1) đã được xuất bản từ artifact đã kiểm chứng qua [workflow phát hành 40256024229](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/actions/runs/40256024229). Bản phát hành có 11 tệp, gồm bộ cài, SHA256, báo cáo nghiệp vụ/GUI/bố cục và các ảnh Windows. Bộ cài có kích thước 17.114.081 byte, SHA256 `9765523bf93c57e690d77b04d4f8d1c05f6f24cad18ca5f29f747e60071e3e99`. Ảnh gốc và liên kết ảnh mô phỏng được trình bày trong [hướng dẫn giao diện](giao-dien.md).
+[Bản phát hành 2.0.2](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/tag/windows-2.0.2-preview.1) đã được xuất bản từ artifact đã kiểm chứng qua [workflow phát hành 40256024229](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/actions/runs/40256024229). Bản phát hành có 11 tệp, gồm bộ cài, SHA256, báo cáo nghiệp vụ/GUI/bố cục và các ảnh Windows. Bộ cài có kích thước 17.114.081 byte, SHA256 `9765523bf93c57e690d77b04d4f8d1c05f6f24cad18ca5f29f747e60071e3e99`. Ảnh gốc và ảnh mô phỏng của 2.0.2 được giữ trong Assets của bản phát hành nêu trên.
 
 Các lệnh kiểm tra Linux: bộ kiểm thử chạy trên Xvfb `:99`; ma trận ảnh chạy trên Xvfb `:104` kích thước 3840×2160 để chứa đủ cửa sổ mô phỏng 200%:
 
