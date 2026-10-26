@@ -243,13 +243,99 @@ def check_black_padding(picture, description):
                              f"(left,top,right,bottom)={padding}")
 
 
+def capture_windows_complete(window):
+    """Capture large test windows in native pixel tiles on a smaller monitor.
+
+    Each tile is an actual painted region of the same window. Moving the test
+    window exposes its remaining pixels; no font/image scaling is performed.
+    This is only used by the synthetic-data verification command.
+    """
+    import ctypes
+    from ctypes import wintypes
+
+    api = ctypes.WinDLL("user32", use_last_error=True)
+    declarations = (
+        ("GetAncestor", [wintypes.HWND, wintypes.UINT], wintypes.HWND),
+        ("GetWindowRect", [wintypes.HWND, ctypes.POINTER(wintypes.RECT)], wintypes.BOOL),
+        ("ClientToScreen", [wintypes.HWND, ctypes.POINTER(wintypes.POINT)], wintypes.BOOL),
+        ("SetWindowPos", [wintypes.HWND, wintypes.HWND, ctypes.c_int, ctypes.c_int,
+                          ctypes.c_int, ctypes.c_int, wintypes.UINT], wintypes.BOOL),
+        ("SystemParametersInfoW", [wintypes.UINT, wintypes.UINT, ctypes.c_void_p, wintypes.UINT], wintypes.BOOL),
+        ("GetSystemMetrics", [ctypes.c_int], ctypes.c_int),
+        ("RedrawWindow", [wintypes.HWND, ctypes.c_void_p, ctypes.c_void_p, wintypes.UINT], wintypes.BOOL),
+    )
+    for name, arguments, result in declarations:
+        function = getattr(api, name)
+        function.argtypes, function.restype = arguments, result
+
+    def checked(value, operation):
+        if not value:
+            raise OSError(ctypes.get_last_error(), f"Windows preview: {operation} failed")
+        return value
+
+    client_hwnd = int(window.wm_frame(), 0)
+    outer_hwnd = api.GetAncestor(client_hwnd, 2) or client_hwnd
+    original = wintypes.RECT()
+    origin = wintypes.POINT(0, 0)
+    checked(api.GetWindowRect(outer_hwnd, ctypes.byref(original)), "GetWindowRect")
+    checked(api.ClientToScreen(client_hwnd, ctypes.byref(origin)), "ClientToScreen")
+    frame_x, frame_y = origin.x - original.left, origin.y - original.top
+    work = wintypes.RECT()
+    if not api.SystemParametersInfoW(0x0030, 0, ctypes.byref(work), 0):
+        work = wintypes.RECT(0, 0, api.GetSystemMetrics(0), api.GetSystemMetrics(1))
+    width, height = window.winfo_width(), window.winfo_height()
+    tile_width = min(width, work.right - work.left - 8)
+    tile_height = min(height, work.bottom - work.top - 8)
+    if min(tile_width, tile_height) <= 0:
+        raise AssertionError("Windows preview: invalid desktop work area")
+
+    def offsets(length, step):
+        return [0] if length <= step else list(range(0, length - step, step)) + [length - step]
+
+    image = Image.new("RGB", (width, height))
+    count = 0
+    try:
+        for y in offsets(height, tile_height):
+            for x in offsets(width, tile_width):
+                desired_x, desired_y = work.left + 4 - x, work.top + 4 - y
+                checked(api.SetWindowPos(outer_hwnd, None, desired_x - frame_x,
+                                         desired_y - frame_y, 0, 0, 0x0015), "SetWindowPos")
+                checked(api.RedrawWindow(outer_hwnd, None, None, 0x0185), "RedrawWindow")
+                settle(window)
+                actual = wintypes.POINT(0, 0)
+                checked(api.ClientToScreen(client_hwnd, ctypes.byref(actual)), "ClientToScreen tile")
+                if abs(actual.x - desired_x) > 2 or abs(actual.y - desired_y) > 2:
+                    raise AssertionError(f"Native preview tile could not be exposed: desired "
+                                         f"{(desired_x, desired_y)}, actual {(actual.x, actual.y)}")
+                raw = capture_windows_window(window)
+                try:
+                    tile = raw.crop((x, y, x + tile_width, y + tile_height))
+                    try:
+                        check_black_padding(tile, f"native tile {x},{y}")
+                        image.paste(tile, (x, y))
+                    finally:
+                        tile.close()
+                finally:
+                    raw.close()
+                count += 1
+        return image, count
+    except Exception:
+        image.close()
+        raise
+    finally:
+        api.SetWindowPos(outer_hwnd, None, original.left, original.top, 0, 0, 0x0015)
+        settle(window)
+
+
 def capture(window, target: Path, records):
     window.lift()
     settle(window)
     if sys.platform == "win32":
-        picture = capture_windows_window(window)
+        picture, tile_count = capture_windows_complete(window)
+        capture_method = "Win32 PrintWindow" if tile_count == 1 else "Tiled Win32 PrintWindow at native pixels"
     else:
         picture = ImageGrab.grab(bbox=bounds(window))
+        capture_method = "Pillow ImageGrab"
     try:
         if picture.width < window.winfo_width() or picture.height < window.winfo_height():
             raise AssertionError(f"{target.name}: screenshot does not contain the complete window")
@@ -261,7 +347,7 @@ def capture(window, target: Path, records):
             raise AssertionError(f"{target.name}: empty PNG")
         records.append({"file": target.name, "pixels": list(picture.size),
                         "tk_client_size": [window.winfo_width(), window.winfo_height()],
-                        "capture_method": "Win32 PrintWindow" if sys.platform == "win32" else "Pillow ImageGrab"})
+                        "capture_method": capture_method})
     finally:
         picture.close()
 

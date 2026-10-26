@@ -91,8 +91,8 @@ public static class NhacViecCaptureDisplay
 '@
     }
 
-    $MinimumWidth = 2880
-    $MinimumHeight = 1728
+    $MinimumWidth = 1536
+    $MinimumHeight = 864
     $Original = [NhacViecCaptureDisplay]::Current()
     Write-CaptureNotice "Original mode $($Original.Width)x$($Original.Height) @ $($Original.Frequency)Hz; actual screen $([NhacViecCaptureDisplay]::GetSystemMetrics(0))x$([NhacViecCaptureDisplay]::GetSystemMetrics(1))."
 
@@ -115,7 +115,7 @@ public static class NhacViecCaptureDisplay
     $SetDisplayCommand = Get-Command Set-DisplayResolution -ErrorAction SilentlyContinue
     if ($null -ne $SetDisplayCommand) {
         try {
-            & $SetDisplayCommand -Width 3840 -Height 2160 -Force -ErrorAction Stop | Out-Null
+            & $SetDisplayCommand -Width 1920 -Height 1080 -Force -ErrorAction Stop | Out-Null
             if (Test-CaptureDisplayReady) {
                 Write-SelectedCaptureMode 'Set-DisplayResolution'
                 exit 0
@@ -132,8 +132,8 @@ public static class NhacViecCaptureDisplay
     $Candidates = @($Supported | Where-Object {
         $_.Width -ge $MinimumWidth -and $_.Height -ge $MinimumHeight -and $_.BitsPerPel -ge 24
     } | Sort-Object @{Expression={
-        if ($_.Width -eq 3840 -and $_.Height -eq 2160) { 0 }
-        elseif ($_.Width -ge 3840 -and $_.Height -ge 2160) { 1 }
+        if ($_.Width -eq 1920 -and $_.Height -eq 1080) { 0 }
+        elseif ($_.Width -ge 1920 -and $_.Height -ge 1080) { 1 }
         else { 2 }
     }}, @{Expression={ [long]$_.Width * [long]$_.Height }},
        @{Expression={ $_.BitsPerPel }; Descending=$true},
