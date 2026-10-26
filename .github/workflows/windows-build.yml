@@ -42,18 +42,32 @@ jobs:
       - name: Capture and verify Windows desktop layouts
         shell: pwsh
         run: |
-          & .\.venv-build\Scripts\python.exe .\scripts\capture_ui.py --output .\dist\ui-preview
-          if ($LASTEXITCODE -ne 0) {
-            $report = Get-Content .\dist\ui-preview\layout-check.json -Raw | ConvertFrom-Json
+          $exe = Join-Path $PWD 'dist\NhacViecAnhHa\NhacViecAnhHa.exe'
+          $output = Join-Path $PWD 'dist\ui-preview'
+          $process = Start-Process -FilePath $exe -ArgumentList @('--capture-ui', ('"' + $output + '"')) -PassThru
+          if (-not $process.WaitForExit(180000)) {
+            $process.Kill()
+            throw 'Frozen application interface capture exceeded three minutes.'
+          }
+          $process.Refresh()
+          $reportPath = Join-Path $output 'layout-check.json'
+          if (-not (Test-Path -LiteralPath $reportPath)) { throw 'Frozen application did not write a layout report.' }
+          $report = Get-Content -LiteralPath $reportPath -Raw | ConvertFrom-Json
+          if ($process.ExitCode -ne 0 -or $report.passed -ne $true) {
             $message = ([string]$report.error).Replace('%', '%25').Replace("`r", '%0D').Replace("`n", '%0A')
             Write-Host "::error title=Windows layout verification::$message"
             throw 'Windows desktop layout verification failed.'
+          }
+          if ($report.frozen -ne $true -or $report.executable -cne 'NhacViecAnhHa.exe' -or
+              $report.display_state.awareness -cne 'per-monitor-v2' -or
+              $report.display_state.window_awareness -cne 'per-monitor-v2') {
+            throw 'Preview verification did not exercise the DPI-aware frozen application.'
           }
 
       - name: Smoke-test installation and uninstallation
         shell: pwsh
         run: |
-          $setup = Join-Path $PWD 'dist\NhacViecAnhHa-Setup-2.0.1-x64.exe'
+          $setup = Join-Path $PWD 'dist\NhacViecAnhHa-Setup-2.0.2-x64.exe'
           $installDir = Join-Path $env:RUNNER_TEMP 'NhacViecAnhHaInstallSmoke'
           $sentinels = @{}
           foreach ($folderName in @('NhacViecAnhHaMoi', 'NhacViecAnhHa')) {
@@ -73,8 +87,18 @@ jobs:
           if ($check.ExitCode -ne 0) { throw "Installed application self-test failed" }
           if (-not (Test-Path $reportPath)) { throw "Installed application did not write its self-test report" }
           $report = Get-Content $reportPath -Raw | ConvertFrom-Json
-          if ($report.passed -ne $true -or $report.gui -ne $false -or $report.version -ne '2.0.1' -or @($report.checks).Count -eq 0) {
+          if ($report.passed -ne $true -or $report.gui -ne $false -or $report.version -ne '2.0.2' -or @($report.checks).Count -eq 0) {
             throw "Installed application did not pass the expected checks"
+          }
+          $guiReportPath = Join-Path $env:RUNNER_TEMP 'installed-gui-smoke-test.json'
+          $guiCheck = Start-Process -FilePath $exe -ArgumentList @('--gui-smoke-test', '--self-test-report', ('"' + $guiReportPath + '"')) -PassThru
+          if (-not $guiCheck.WaitForExit(60000)) { $guiCheck.Kill(); throw 'Installed GUI check timed out.' }
+          $guiCheck.Refresh()
+          if ($guiCheck.ExitCode -ne 0 -or -not (Test-Path $guiReportPath)) { throw 'Installed GUI check failed.' }
+          $guiReport = Get-Content $guiReportPath -Raw | ConvertFrom-Json
+          if ($guiReport.passed -ne $true -or $guiReport.gui -ne $true -or $guiReport.version -cne '2.0.2' -or
+              $guiReport.display.awareness -cne 'per-monitor-v2' -or $guiReport.display.window_awareness -cne 'per-monitor-v2') {
+            throw 'Installed application did not retain native PerMonitorV2 rendering.'
           }
           $uninstaller = Join-Path $installDir 'Uninstall.exe'
           $remove = Start-Process -FilePath $uninstaller -ArgumentList '/S' -Wait -PassThru
@@ -93,9 +117,9 @@ jobs:
       - name: Upload installer and checksum
         uses: actions/upload-artifact@v4
         with:
-          name: NhacViecAnhHa-Windows-x64-2.0.1
+          name: NhacViecAnhHa-Windows-x64-2.0.2
           path: |
-            dist/NhacViecAnhHa-Setup-2.0.1-x64.exe
+            dist/NhacViecAnhHa-Setup-2.0.2-x64.exe
             dist/SHA256SUMS.txt
             dist/self-test.json
             dist/gui-smoke-test.json

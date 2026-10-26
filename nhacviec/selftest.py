@@ -1,6 +1,7 @@
 """Packaged-runtime checks use temporary data and do not import test runners."""
 from datetime import date, datetime, time
 from pathlib import Path
+import sys
 from tempfile import TemporaryDirectory
 
 from . import __version__
@@ -50,6 +51,8 @@ def run_self_test(*, gui=False):
             checks.append("Consistent backup/restore")
 
             if gui:
+                from .display import initialize_display, get_display_state
+                initialize_display()
                 import tkinter as tk
                 from .app import NhacViecApp
                 root = tk.Tk()
@@ -57,6 +60,10 @@ def run_self_test(*, gui=False):
                 errors = []
                 try:
                     app = NhacViecApp(root, store, base, integrations=False, enable_timers=False)
+                    display = get_display_state(root)
+                    if sys.platform == "win32" and getattr(sys, "frozen", False):
+                        assert display["awareness"] == "per-monitor-v2", display
+                        assert display["window_awareness"] == "per-monitor-v2", display
                     root.report_callback_exception = lambda *args: errors.append(str(args[1]))
                     root.deiconify()
                     root.update()
@@ -76,4 +83,7 @@ def run_self_test(*, gui=False):
                         root.destroy()
                     except tk.TclError:
                         pass
-    return {"passed": True, "gui": gui, "version": __version__, "checks": checks}
+    report = {"passed": True, "gui": gui, "version": __version__, "checks": checks}
+    if gui:
+        report["display"] = display
+    return report

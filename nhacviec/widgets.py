@@ -8,7 +8,7 @@ from tkinter import font as tkfont
 from tkinter import ttk
 
 
-def ui_font(root_or_widget, size: int = 11, weight: str = "normal") -> tuple[str, int, str]:
+def ui_font(root_or_widget, size: int = 12, weight: str = "normal") -> tuple[str, int, str]:
     """Choose an installed Unicode UI font, including on non-Windows hosts."""
     families = {family.casefold(): family for family in tkfont.families(root_or_widget)}
     for preferred in ("Segoe UI", "Noto Sans", "DejaVu Sans", "Arial"):
@@ -16,6 +16,21 @@ def ui_font(root_or_widget, size: int = 11, weight: str = "normal") -> tuple[str
             return families[preferred.casefold()], size, weight
     default = tkfont.nametofont("TkDefaultFont", root=root_or_widget).actual("family")
     return default, size, weight
+
+
+def layout_scale(widget) -> float:
+    """Logical-to-native pixel scale selected before the app builds widgets."""
+    current = widget
+    while current is not None:
+        factor = getattr(current, "_layout_scale", None)
+        if factor is not None:
+            return float(factor)
+        current = getattr(current, "master", None)
+    return 1.0
+
+
+def scale_px(widget, value: int | float) -> int:
+    return max(1, round(value * layout_scale(widget)))
 
 
 def parse_date(value: str, *, allow_empty: bool = False) -> date | None:

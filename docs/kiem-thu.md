@@ -1,6 +1,21 @@
 # Kết quả kiểm tra mã nguồn và bộ cài
 
-## Bản 2.0.1 — giao diện mới
+## Bản 2.0.2 — DPI và khả năng đọc
+
+Ngày 26/10/2026: bản 2.0.2 đã đạt toàn bộ 89 kiểm thử trên Linux/Xvfb. Lệnh `python -m nhacviec --capture-ui` đạt 48 kiểm tra bố cục và tạo 48 ảnh PNG qua pha tỷ lệ mặc định cùng các pha Tk 120/144/192 DPI. Dựng EXE, kiểm tra manifest, DPI thực của cửa sổ, cài/gỡ và chụp giao diện Windows 2.0.2 đang chờ thực thi.
+
+Các lệnh kiểm tra Linux: bộ kiểm thử chạy trên Xvfb `:99`; ma trận ảnh chạy trên Xvfb `:104` kích thước 3840×2160 để chứa đủ cửa sổ mô phỏng 200%:
+
+```sh
+DISPLAY=:99 python -m unittest discover -s tests -v
+DISPLAY=:104 python -m nhacviec --capture-ui /tmp/nhacviec-2.0.2-ui
+```
+
+Ma trận bố cục mới tách pha DPI thực của cửa sổ khi khởi động và các pha thay đổi tỷ lệ font/bố cục Tk tương đương 125% (120 DPI), 150% (144 DPI), 200% (192 DPI). Các pha Tk mô phỏng không đổi thiết lập hiển thị Windows và không xác nhận ứng dụng đã chạy trên màn hình vật lý ở từng tỷ lệ đó. Chuyển một cửa sổ đang mở qua các màn hình có DPI khác nhau chưa được xác nhận hỗ trợ tự đổi kích thước.
+
+Kiểm tra EXE cần xác nhận manifest khai báo PerMonitorV2 và trạng thái DPI của tiến trình/cửa sổ thật. Cỡ chữ Tk phải khớp DPI thực khi ứng dụng khởi tạo giao diện; kiểm tra mã nguồn hoặc mô phỏng API không thay thế bước xác nhận này. Chi tiết thay đổi và nâng cấp: [readability.md](readability.md).
+
+## Lịch sử bản 2.0.1
 
 Ngày 22/10/2026: bản 2.0.1 đạt 77 kiểm thử trên Linux/Xvfb, hai kiểm tra ứng dụng `--self-test` / `--gui-smoke-test`, cùng 24 kiểm tra bố cục và 24 ảnh chụp ở 1120×720, 1366×768, cỡ chữ mặc định và Tk 120 DPI. Các kiểm tra hồi quy mới xác nhận văn bản dài không bị cắt khi thay đổi kích thước và nút lưu luôn hiển thị khi cuộn biểu mẫu.
 

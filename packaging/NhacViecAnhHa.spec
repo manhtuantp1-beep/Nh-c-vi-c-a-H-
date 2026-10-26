@@ -38,6 +38,7 @@ exe = EXE(
     strip=False,
     upx=False,
     console=False,
+    manifest=str(project_root / "packaging" / "NhacViecAnhHa.manifest"),
     disable_windowed_traceback=False,
 )
 coll = COLLECT(exe, a.binaries, a.datas, strip=False, upx=False, name="NhacViecAnhHa")

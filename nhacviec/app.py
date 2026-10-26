@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from datetime import datetime
 import logging
+import sys
 from pathlib import Path
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
@@ -14,15 +15,17 @@ from . import __version__
 from .calendar_ui import CalendarView, close_schedule_editors
 from .platform_support import PlatformSupport
 from .reminders import ReminderEngine
-from .widgets import ui_font
+from .widgets import ui_font, scale_px
+from .display import sync_tk_scaling
 
 from .dialogs import TaskDialog, SettingsDialog, ExportDialog, STATUS_LABELS
 from .task_ui import TaskListPage, ALL_FILTER, TODO_FILTER
-from .theme import BG, INK, MUTED, PRIMARY, BORDER, configure_style, line_icon
+from .theme import BG, INK, MUTED, PRIMARY, BORDER, NAVY, NAV_TEXT, NAV_MUTED, configure_style, line_icon
 
 
 class NhacViecApp:
-    def __init__(self, root: tk.Tk, store, data_dir: Path, *, integrations=True, enable_timers=True):
+    def __init__(self, root: tk.Tk, store, data_dir: Path, *, integrations=True, enable_timers=True,
+                 font_scale_override: float | None = None):
         self.root, self.store, self.data_dir = root, store, Path(data_dir)
         self.instance_lock = None
         self._closing = False
@@ -32,11 +35,25 @@ class NhacViecApp:
         self.notification_window = None
         self.notification_text = None
         self.notifications = []
+        if font_scale_override is None:
+            native_dpi = sync_tk_scaling(root)
+            factor = (native_dpi / 96 if native_dpi else float(root.tk.call("tk", "scaling")) / (96 / 72)) if sys.platform == "win32" else 1.0
+        else:
+            factor = float(font_scale_override)
+            if not 0.5 <= factor <= 4:
+                raise ValueError("Unsupported interface scale")
+            root.tk.call("tk", "scaling", factor * (96 / 72))
+        root._layout_scale = factor
+        px = lambda value: scale_px(root, value)
         root.title(f"Nhắc việc anh Hà · {__version__}")
-        width = max(1120, min(1320, root.winfo_screenwidth() - 64))
-        height = max(680, min(820, root.winfo_screenheight() - 96))
+        available_width = root.winfo_screenwidth() - px(40)
+        available_height = root.winfo_screenheight() - px(64)
+        min_width = min(px(1120), available_width)
+        min_height = min(px(680), available_height)
+        width = max(min_width, min(px(1320), available_width))
+        height = max(min_height, min(px(820), available_height))
         root.geometry(f"{width}x{height}")
-        root.minsize(1120, 680)
+        root.minsize(min_width, min_height)
         root.configure(background=BG)
         configure_style(root)
         root.report_callback_exception = self.report_exception
@@ -44,27 +61,27 @@ class NhacViecApp:
         footer = ttk.Frame(root, style="Surface.TFrame", padding=(18, 6))
         footer.pack(side="bottom", fill="x")
         self.status_var = tk.StringVar(value="Sẵn sàng  ·  Dữ liệu được lưu trên máy tính của anh")
-        ttk.Label(footer, textvariable=self.status_var, style="SideMeta.TLabel").pack(side="left")
-        ttk.Label(footer, text=f"Phiên bản {__version__}", style="SideMeta.TLabel").pack(side="right")
+        ttk.Label(footer, textvariable=self.status_var, style="Footer.TLabel").pack(side="left")
+        ttk.Label(footer, text=f"Phiên bản {__version__}", style="Footer.TLabel").pack(side="right")
         shell = ttk.Frame(root)
         shell.pack(fill="both", expand=True)
-        nav_font = tkfont.Font(root=root, font=ui_font(root, 10, "bold"))
-        sidebar_width = max(216, nav_font.measure("Đang thực hiện   999") + 64)
-        self.sidebar = ttk.Frame(shell, style="Side.TFrame", padding=(12, 24), width=sidebar_width)
+        nav_font = tkfont.Font(root=root, font=ui_font(root, 11, "bold"))
+        sidebar_width = max(px(230), nav_font.measure("Đang thực hiện   999") + px(64))
+        self.sidebar = ttk.Frame(shell, style="Side.TFrame", padding=(px(12), px(18)), width=sidebar_width)
         self.sidebar.pack(side="left", fill="y")
         self.sidebar.pack_propagate(False)
-        bottom = ttk.Frame(self.sidebar, style="Surface.TFrame")
+        bottom = ttk.Frame(self.sidebar, style="Side.TFrame")
         bottom.pack(side="bottom", fill="x")
-        ttk.Separator(bottom).pack(fill="x", pady=(10, 10))
+        ttk.Separator(bottom, style="Side.TSeparator").pack(fill="x", pady=(10, 10))
         ttk.Button(bottom, text="Thông tin ứng dụng", style="Nav.TButton", command=self.about).pack(fill="x")
         ttk.Button(bottom, text="Thoát hẳn ứng dụng", style="Nav.TButton", command=self.exit).pack(fill="x", pady=(2, 0))
-        brand = ttk.Frame(self.sidebar, style="Surface.TFrame")
-        brand.pack(fill="x", padx=9, pady=(0, 25))
-        logo = tk.Canvas(brand, width=34, height=34, background="white", highlightthickness=0)
+        brand = ttk.Frame(self.sidebar, style="Side.TFrame")
+        brand.pack(fill="x", padx=9, pady=(0, 20))
+        logo = tk.Canvas(brand, width=px(34), height=px(34), background=NAVY, highlightthickness=0)
         logo.pack(side="left", padx=(0, 9))
-        logo.create_oval(1, 1, 33, 33, fill=PRIMARY, outline=PRIMARY)
-        logo.create_line(10, 17, 15, 22, 25, 11, fill="white", width=3, capstyle="round", joinstyle="round")
-        brand_text = ttk.Frame(brand, style="Surface.TFrame")
+        logo.create_oval(px(1), px(1), px(33), px(33), fill="#F1CA65", outline="#F1CA65")
+        logo.create_line(px(10), px(17), px(15), px(22), px(25), px(11), fill=NAVY, width=px(3), capstyle="round", joinstyle="round")
+        brand_text = ttk.Frame(brand, style="Side.TFrame")
         brand_text.pack(side="left")
         ttk.Label(brand_text, text="Nhắc việc", style="Side.TLabel").pack(anchor="w")
         ttk.Label(brand_text, text="Không gian cá nhân", style="SideMeta.TLabel").pack(anchor="w", pady=(3, 0))
@@ -73,12 +90,12 @@ class NhacViecApp:
         self._nav_icons = {}
         for key, text in [("active", "Việc cần làm"), ("in_progress", "Đang thực hiện"), ("due", "Sắp đến hạn"),
                           ("completed", "Đã hoàn thành"), ("canceled", "Đã hủy"), ("calendar", "Lịch của anh")]:
-            self._nav_icons[key] = (line_icon(root, key, MUTED), line_icon(root, key, PRIMARY))
+            self._nav_icons[key] = (line_icon(root, key, NAV_MUTED, size=px(18)), line_icon(root, key, "#F1CA65", size=px(18)))
             b = ttk.Button(self.sidebar, text=text, image=self._nav_icons[key][0], compound="left",
                            style="Nav.TButton", command=lambda k=key: self.show_page(k))
             b.pack(fill="x", pady=2)
             self.nav_buttons[key] = b
-        ttk.Label(self.sidebar, text="TIỆN ÍCH", style="SideSection.TLabel").pack(anchor="w", padx=12, pady=(24, 9))
+        ttk.Label(self.sidebar, text="TIỆN ÍCH", style="SideSection.TLabel").pack(anchor="w", padx=12, pady=(18, 7))
         self.data_menu = tk.Menu(self.sidebar, tearoff=False, borderwidth=0, activeborderwidth=0)
         for text, action in (("Xuất báo cáo Excel…", lambda: ExportDialog(self)), ("Sao lưu dữ liệu…", self.backup),
                              ("Khôi phục dữ liệu…", self.restore)):

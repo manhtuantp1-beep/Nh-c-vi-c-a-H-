@@ -78,7 +78,7 @@ function Invoke-AppCheck {
     if (-not (Test-Path -LiteralPath $ReportPath)) { throw "Kiểm tra $Check không tạo báo cáo của lần chạy này." }
     $Report = Get-Content -LiteralPath $ReportPath -Raw | ConvertFrom-Json
     if ($null -eq $Report) { throw "Báo cáo kiểm tra $Check rỗng." }
-    if ($Report.passed -ne $true -or $Report.version -ne "2.0.1") { throw "Báo cáo $Check không xác nhận bản dựng thành công." }
+    if ($Report.passed -ne $true -or $Report.version -ne "2.0.2") { throw "Báo cáo $Check không xác nhận bản dựng thành công." }
     if ($Report.gui -ne ($Check -eq "--gui-smoke-test")) { throw "Báo cáo không thuộc đúng loại kiểm tra $Check." }
     $Checks = @($Report.checks | Where-Object { $_ -is [string] -and -not [string]::IsNullOrWhiteSpace($_) })
     if ($Checks.Count -eq 0) { throw "Kiểm tra $Check không chạy bước kiểm chứng nào." }
@@ -88,7 +88,7 @@ $ProjectRoot = Split-Path -Parent $PSScriptRoot
 $PreviousLocation = Get-Location
 $VenvPath = Join-Path $ProjectRoot ".venv-build"
 $BuildPython = Join-Path $VenvPath "Scripts\python.exe"
-$Version = "2.0.1"
+$Version = "2.0.2"
 
 try {
     Set-Location $ProjectRoot

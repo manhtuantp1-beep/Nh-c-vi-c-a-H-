@@ -10,7 +10,7 @@ from tkinter.scrolledtext import ScrolledText
 
 from .excel import export_workbook
 from .models import Task
-from .widgets import DateEntry, ScrollableForm, parse_time, ui_font
+from .widgets import DateEntry, ScrollableForm, parse_time, ui_font, layout_scale
 
 
 STATUS_LABELS = {
@@ -20,8 +20,8 @@ STATUS_LABELS = {
     "canceled": "Đã hủy",
 }
 SURFACE = "#FFFFFF"
-INK = "#17243B"
-BORDER = "#E3E8F0"
+INK = "#15263E"
+BORDER = "#CDD7E5"
 
 
 def _prepare_dialog(window: tk.Toplevel, app, title: str, *, width: int, height: int,
@@ -33,14 +33,16 @@ def _prepare_dialog(window: tk.Toplevel, app, title: str, *, width: int, height:
     window.update_idletasks()
     screen_width = window.winfo_screenwidth()
     screen_height = window.winfo_screenheight()
-    width = min(width, screen_width - 48)
-    height = min(height, screen_height - 96)
+    factor = layout_scale(app.root)
+    window._layout_scale = factor
+    width = min(round(width * factor), screen_width - 48)
+    height = min(round(height * factor), screen_height - 96)
     x = max(16, min(app.root.winfo_rootx() + (app.root.winfo_width() - width) // 2,
                     screen_width - width - 16))
     y = max(16, min(app.root.winfo_rooty() + (app.root.winfo_height() - height) // 2,
                     screen_height - height - 64))
     window.geometry(f"{width}x{height}+{x}+{y}")
-    window.minsize(min(min_width, width), min(min_height, height))
+    window.minsize(min(round(min_width * factor), width), min(round(min_height * factor), height))
     window.columnconfigure(0, weight=1)
     window.rowconfigure(1, weight=1)
 
@@ -74,7 +76,7 @@ def _label(parent, text: str, *, row: int, column: int = 0, columnspan: int = 1,
 
 def _text_area(parent, *, height: int) -> ScrolledText:
     text = ScrolledText(
-        parent, height=height, wrap="word", font=ui_font(parent, 11),
+        parent, height=height, wrap="word", font=ui_font(parent, 12),
         foreground=INK, background=SURFACE, insertbackground=INK,
         selectbackground="#E9EFFF", selectforeground=INK,
         relief="flat", borderwidth=0, highlightthickness=1,

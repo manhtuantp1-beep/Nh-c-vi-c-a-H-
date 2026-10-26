@@ -39,7 +39,7 @@ class TaskListPage(ttk.Frame):
         ttk.Label(titles, text=subtitles[view], style="Subtitle.TLabel").pack(anchor="w", pady=(4, 0))
         ttk.Button(header, text="+  Tạo công việc", style="Accent.TButton", command=app.new_task).pack(side="right", padx=(12, 0))
 
-        metrics = ttk.Frame(self)
+        metrics = self.metrics = ttk.Frame(self)
         metrics.pack(fill="x", pady=(0, 17))
         self.metric_labels = {}
         for col, (key, label, style) in enumerate((("todo", "Chưa bắt đầu", "Metric.TLabel"),
@@ -56,33 +56,43 @@ class TaskListPage(ttk.Frame):
         self.filters = ttk.Frame(self, style="Card.TFrame", padding=(15, 12))
         self.filters.pack(fill="x")
         self.filters.columnconfigure(1, weight=1)
+        self._filters_stacked = None
         self.filter_var = tk.StringVar(value=ALL_FILTER)
+        self.filter_group = None
         if view == "active":
-            ttk.Label(self.filters, text="Hiển thị", style="Field.TLabel").grid(row=0, column=0, sticky="w", pady=(0, 6))
-            self.filter_combo = ttk.Combobox(self.filters, state="readonly", textvariable=self.filter_var,
-                                             values=(ALL_FILTER, TODO_FILTER), width=31)
-            self.filter_combo.grid(row=1, column=0, sticky="ew", padx=(0, 14))
+            self.filter_group = ttk.Frame(self.filters, style="Surface.TFrame")
+            self.filter_group.grid(row=0, column=0, sticky="ew", padx=(0, 14))
+            ttk.Label(self.filter_group, text="Hiển thị", style="Field.TLabel").pack(anchor="w", pady=(0, 6))
+            self.filter_combo = ttk.Combobox(self.filter_group, state="readonly", textvariable=self.filter_var,
+                                             values=(ALL_FILTER, TODO_FILTER), width=27)
+            self.filter_combo.pack(fill="x")
             self.filter_combo.bind("<<ComboboxSelected>>", lambda _e: self.refresh())
-        ttk.Label(self.filters, text="Tìm công việc", style="Field.TLabel").grid(row=0, column=1, sticky="w", pady=(0, 6))
+        self.search_group = ttk.Frame(self.filters, style="Surface.TFrame")
+        self.search_group.grid(row=0, column=1, sticky="ew")
+        ttk.Label(self.search_group, text="Tìm công việc", style="Field.TLabel").pack(anchor="w", pady=(0, 6))
+        search_row = ttk.Frame(self.search_group, style="Surface.TFrame")
+        search_row.pack(fill="x")
         self.query_var = tk.StringVar()
-        self.search_entry = ttk.Entry(self.filters, textvariable=self.query_var, width=20)
-        self.search_entry.grid(row=1, column=1, sticky="ew")
+        self.search_entry = ttk.Entry(search_row, textvariable=self.query_var, width=14)
+        self.search_entry.pack(side="left", fill="x", expand=True)
         self.search_entry.bind("<Return>", lambda _e: self.apply_filters())
-        ttk.Button(self.filters, text="Tìm", width=5, command=self.apply_filters).grid(row=1, column=2, padx=(8, 0))
-        self.advanced_button = ttk.Button(self.filters, text="Bộ lọc +", width=10, style="Quiet.TButton", command=self.toggle_advanced)
-        self.advanced_button.grid(row=1, column=3, padx=(4, 0))
+        ttk.Button(search_row, text="Tìm", width=5, command=self.apply_filters).pack(side="left", padx=(8, 0))
+        self.advanced_button = ttk.Button(search_row, text="Bộ lọc +", width=10, style="Quiet.TButton", command=self.toggle_advanced)
+        self.advanced_button.pack(side="left", padx=(4, 0))
         self.advanced = ttk.Frame(self.filters, style="Surface.TFrame")
-        self.advanced.columnconfigure(1, weight=1)
+        self.advanced.columnconfigure(0, weight=1)
+        ordering = ttk.Frame(self.advanced, style="Surface.TFrame")
+        ordering.grid(row=0, column=0, sticky="ew", pady=(13, 10))
         self.sort_var = tk.StringVar(value="Deadline")
         self.descending = tk.BooleanVar(value=False)
-        ordering = ttk.Frame(self.advanced, style="Surface.TFrame")
-        ordering.grid(row=0, column=0, columnspan=2, sticky="ew", pady=(13, 10))
         ttk.Label(ordering, text="Sắp xếp theo", style="Field.TLabel").pack(side="left")
         ttk.Combobox(ordering, state="readonly", textvariable=self.sort_var,
                      values=("Deadline", "Ngày tạo"), width=13).pack(side="left", padx=(10, 12))
         ttk.Checkbutton(ordering, text="Giảm dần", variable=self.descending, style="Surface.TCheckbutton").pack(side="left")
-        ttk.Button(ordering, text="Áp dụng", width=7, style="Compact.TButton", command=self.apply_filters).pack(side="right", padx=(6, 0))
-        ttk.Button(ordering, text="Xóa lọc", width=7, style="Compact.TButton", command=self.clear_filters).pack(side="right", padx=(12, 0))
+        self.filter_actions = ttk.Frame(self.advanced, style="Surface.TFrame")
+        self.filter_actions.grid(row=0, column=1, sticky="e", pady=(13, 10), padx=(12, 0))
+        ttk.Button(self.filter_actions, text="Áp dụng", width=7, style="Compact.TButton", command=self.apply_filters).pack(side="right", padx=(6, 0))
+        ttk.Button(self.filter_actions, text="Xóa lọc", width=7, style="Compact.TButton", command=self.clear_filters).pack(side="right")
         dates = ttk.Frame(self.advanced, style="Surface.TFrame")
         dates.grid(row=1, column=0, columnspan=2, sticky="ew")
         ttk.Label(dates, text="Từ ngày", style="Field.TLabel").grid(row=0, column=0, sticky="w", padx=(0, 8))
@@ -91,6 +101,7 @@ class TaskListPage(ttk.Frame):
         ttk.Label(dates, text="Đến ngày", style="Field.TLabel").grid(row=0, column=2, padx=(16, 8))
         self.date_to = DateEntry(dates, value=None, allow_empty=True, width=10)
         self.date_to.grid(row=0, column=3, sticky="w")
+        self.filters.bind("<Configure>", self._layout_filters)
 
         listing = ttk.Frame(self)
         listing.pack(fill="x", pady=(16, 6))
@@ -120,10 +131,40 @@ class TaskListPage(ttk.Frame):
     def toggle_advanced(self):
         self._advanced_open = not self._advanced_open
         if self._advanced_open:
-            self.advanced.grid(row=2, column=0, columnspan=4, sticky="ew")
+            self.advanced.grid(row=2, column=0, columnspan=2, sticky="ew")
         else:
             self.advanced.grid_remove()
         self._filter_caption()
+        self._layout_filters()
+
+    def _layout_filters(self, _event=None):
+        """Keep larger text usable instead of shrinking controls to fit one row."""
+        available = max(1, self.filters.winfo_width() - 32)
+        stacked = bool(self.filter_group is not None and
+                       self.filter_group.winfo_reqwidth() + self.search_group.winfo_reqwidth() + 14 > available)
+        if stacked != self._filters_stacked:
+            self._filters_stacked = stacked
+            if self.filter_group is None:
+                self.search_group.grid_configure(row=0, column=0, columnspan=2, pady=0)
+                self.filters.columnconfigure(0, weight=1)
+                self.filters.columnconfigure(1, weight=0)
+            elif stacked:
+                self.filter_group.grid_configure(row=0, column=0, columnspan=2, padx=0)
+                self.search_group.grid_configure(row=1, column=0, columnspan=2, pady=(10, 0))
+                self.filters.columnconfigure(0, weight=1)
+                self.filters.columnconfigure(1, weight=0)
+            else:
+                self.filter_group.grid_configure(row=0, column=0, columnspan=1, padx=(0, 14))
+                self.search_group.grid_configure(row=0, column=1, columnspan=1, pady=0)
+                self.filters.columnconfigure(0, weight=0)
+                self.filters.columnconfigure(1, weight=1)
+        # Expanded filters take priority over summary tiles in a narrow window.
+        # Hiding only the tiles keeps the actual task list usable below them.
+        if stacked and self._advanced_open:
+            if self.metrics.winfo_manager():
+                self.metrics.pack_forget()
+        elif not self.metrics.winfo_manager():
+            self.metrics.pack(fill="x", pady=(0, 17), before=self.filters)
 
     def _filter_caption(self):
         count = sum((bool(self.date_from.get()), bool(self.date_to.get()),
@@ -151,6 +192,15 @@ class TaskListPage(ttk.Frame):
         if self._resize_job is None:
             self._resize_job = self.after_idle(self._update_wraps)
 
+    def destroy(self):
+        if self._resize_job is not None:
+            try:
+                self.after_cancel(self._resize_job)
+            except tk.TclError:
+                pass
+            self._resize_job = None
+        super().destroy()
+
     def _update_wraps(self):
         self._resize_job = None
         for card in self.cards_by_id.values():
@@ -162,11 +212,14 @@ class TaskListPage(ttk.Frame):
         # A Configure event precedes grid's child layout. Derive the available
         # column from the new card width and the controls' natural widths so
         # resizing cannot keep a stale wrap length from the previous window.
-        right_width = max((child.winfo_reqwidth() for child in card.grid_slaves(column=1)), default=260)
+        right_column = [child for child in card.grid_slaves(column=1)
+                        if int(child.grid_info()["column"]) == 1 and int(child.grid_info().get("columnspan", 1)) == 1]
+        right_width = max((child.winfo_reqwidth() for child in right_column), default=260)
         width = max(160, card.winfo_width() - 34 - right_width - 18)
         for label in getattr(card, "wrapping_labels", []):
-            if int(label.cget("wraplength")) != width:
-                label.configure(wraplength=width)
+            target_width = max(160, card.winfo_width() - 36) if getattr(label, "_full_card_width", False) else width
+            if int(label.cget("wraplength")) != target_width:
+                label.configure(wraplength=target_width)
 
     def apply_filters(self):
         try:
@@ -243,10 +296,11 @@ class TaskListPage(ttk.Frame):
             content = task.reason or task.content.replace("\n", " ") or "Chưa có nội dung chi tiết."
             if len(content) > 80:
                 content = content[:77] + "…"
-            content_label = ttk.Label(card, text=content, style="CardMeta.TLabel", wraplength=520)
-            content_label.grid(row=2, column=0, sticky="w", padx=(0, 15))
+            content_label = ttk.Label(card, text=content, style="CardBody.TLabel", wraplength=700)
+            content_label._full_card_width = True
+            content_label.grid(row=2, column=0, columnspan=2, sticky="w", pady=(2, 0))
             actions = ttk.Frame(card, style="Surface.TFrame")
-            actions.grid(row=2, column=1, sticky="e")
+            actions.grid(row=3, column=0, columnspan=2, sticky="e", pady=(12, 0))
             ttk.Button(actions, text="Chi tiết", style="Compact.TButton", command=lambda t=task: self.app.edit_task(t.id)).pack(side="left", padx=(0, 5))
             if task.status == "todo":
                 ttk.Button(actions, text="Bắt đầu", style="Compact.TButton", command=lambda t=task: self.app.transition_task(t.id, "in_progress")).pack(side="left", padx=(0, 5))

@@ -17,7 +17,13 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--self-test", action="store_true", help="Kiểm tra bản đóng gói bằng dữ liệu tạm")
     parser.add_argument("--gui-smoke-test", action="store_true", help="Kiểm tra cửa sổ bằng dữ liệu tạm")
     parser.add_argument("--self-test-report", type=Path, help="Ghi kết quả kiểm tra dạng JSON")
+    parser.add_argument("--capture-ui", type=Path, help=argparse.SUPPRESS)
     args = parser.parse_args(argv)
+    from .display import initialize_display
+    initialize_display()
+    if args.capture_ui:
+        from .ui_preview import main as capture_ui
+        return capture_ui(["--output", str(args.capture_ui)])
     if args.self_test or args.gui_smoke_test:
         report = {"passed": False, "gui": args.gui_smoke_test}
         try:

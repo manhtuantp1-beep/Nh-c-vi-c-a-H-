@@ -1,18 +1,14 @@
-# Giao diện và nâng cấp 2.0.1
+# Giao diện và nâng cấp 2.0.2
 
-## Ảnh giao diện trên Windows
+## Chữ và bố cục
 
-Ảnh chụp từ bản kiểm tra Windows 2.0.1; nội dung công việc là dữ liệu minh họa tạm thời, không tự thêm vào dữ liệu người dùng.
+Bản 2.0.2 dùng thanh điều hướng xanh navy, thẻ nội dung trắng và chữ đậm màu. Cỡ chữ nội dung mặc định 12 pt, tên công việc 13 pt đậm và thông tin phụ 11 pt. Cỡ chữ theo DPI của màn hình lúc mở ứng dụng. Xem [nguyên nhân chữ mờ và cách nâng cấp](readability.md).
 
-![Danh sách công việc trên Windows](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/download/windows-2.0.1-preview.1/tasks-1366x768.png)
-
-![Lịch tháng trên Windows](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/download/windows-2.0.1-preview.1/calendar-month-1366x768.png)
-
-![Biểu mẫu công việc trên Windows](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/download/windows-2.0.1-preview.1/task-dialog.png)
+Ảnh bản 2.0.2 sẽ được bổ sung sau khi chụp và kiểm tra trên Windows.
 
 ## Không gian làm việc
 
-Thanh bên trái chia thành Công việc và Tiện ích. Mục đang mở có nền xanh nhạt. Chọn Việc cần làm để xem công việc chưa hoàn thành; các mục Đang thực hiện, Sắp đến hạn, Đã hoàn thành và Đã hủy giúp tra cứu theo trạng thái. Chọn Lịch của anh để chuyển sang lịch.
+Thanh bên trái chia thành Công việc và Tiện ích. Mục đang mở có nền sáng hơn và biểu tượng vàng trên thanh xanh navy. Chọn Việc cần làm để xem công việc chưa hoàn thành; các mục Đang thực hiện, Sắp đến hạn, Đã hoàn thành và Đã hủy giúp tra cứu theo trạng thái. Chọn Lịch của anh để chuyển sang lịch.
 
 Giao diện dùng font Unicode thống nhất, ưu tiên Segoe UI trên Windows. Nội dung chính đặt trên nền trắng; trạng thái đang làm dùng xanh lam, hoàn thành dùng xanh lục và quá hạn dùng đỏ kèm chữ để dễ nhận biết.
 
@@ -29,7 +25,9 @@ Mỗi công việc nằm trên một hàng: tên, phân loại, mã và nội du
 | Tất cả việc chưa hoàn thành | Việc mới và đang làm, gồm việc tạm dừng, mở lại hoặc quá hạn |
 | Chưa bắt đầu | Nhóm Cần làm, gồm việc tạm dừng hoặc mở lại |
 
-Nhập tên hoặc mã vào Tìm công việc rồi nhấn Enter hoặc Tìm. Chọn Bộ lọc + để mở sắp xếp theo Deadline/Ngày tạo, chiều giảm dần và khoảng ngày. Chọn Áp dụng để lọc; Xóa lọc để trở về tìm kiếm và sắp xếp mặc định. Thu gọn chỉ ẩn phần điều khiển, không xóa điều kiện lọc.
+Nhập tên hoặc mã vào Tìm công việc rồi nhấn Enter hoặc Tìm. Chọn Bộ lọc + để mở sắp xếp theo Deadline/Ngày tạo, chiều giảm dần và khoảng ngày. Chọn Áp dụng để lọc; Xóa lọc để trở về tìm kiếm và sắp xếp mặc định. Thu gọn chỉ ẩn phần điều khiển, không xóa điều kiện lọc; số trên nút Bộ lọc cho biết các điều kiện nâng cao đang dùng.
+
+Khi cửa sổ hẹp hoặc chữ lớn, phần Hiển thị và Tìm công việc được xếp thành hai hàng. Các ô tổng quan tạm ẩn khi mở bộ lọc trong bố cục này để dành chỗ cho danh sách; thu gọn bộ lọc sẽ hiện lại.
 
 ## Lịch
 
@@ -51,11 +49,11 @@ Dữ liệu và báo cáo trên thanh bên mở menu Xuất báo cáo Excel, Sao
 | Ctrl+Enter | Lưu biểu mẫu lịch |
 | Esc | Đóng biểu mẫu; công việc/lịch chưa lưu vẫn có bước xác nhận |
 
-## Nâng cấp từ 2.0.0
+## Nâng cấp từ 2.0.0 hoặc 2.0.1
 
-1. Trong bản 2.0.0, chọn Sao lưu dữ liệu và lưu bản sao ở vị trí dễ tìm.
+1. Trong bản đang dùng, chọn Sao lưu dữ liệu và lưu bản sao ở vị trí dễ tìm. Với 2.0.1, mục này nằm trong Dữ liệu và báo cáo.
 2. Chọn Thoát hẳn trong ứng dụng hoặc menu khay hệ thống. Đóng cửa sổ bằng dấu X chỉ thu nhỏ ứng dụng và chưa đủ để cập nhật.
-3. Tải và chạy [bộ cài 2.0.1](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/download/windows-2.0.1-preview.1/NhacViecAnhHa-Setup-2.0.1-x64.exe). Giữ nguyên thư mục cài đặt đang dùng, rồi hoàn tất cài đặt.
-4. Mở ứng dụng và kiểm tra số phiên bản 2.0.1 ở thanh dưới cùng. Công việc, lịch và cài đặt của 2.0.0 dùng lại cơ sở dữ liệu hiện có tại `%USERPROFILE%\NhacViecAnhHaMoi\data\tasks.db`.
+3. Khi bản 2.0.2 được phát hành trên [Releases](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases), chạy `NhacViecAnhHa-Setup-2.0.2-x64.exe`. Giữ nguyên thư mục cài đặt đang dùng, rồi hoàn tất cài đặt.
+4. Mở ứng dụng và kiểm tra số phiên bản 2.0.2 ở thanh dưới cùng. Công việc, lịch và cài đặt 2.0.x dùng lại cơ sở dữ liệu hiện có tại `%USERPROFILE%\NhacViecAnhHaMoi\data\tasks.db`.
 
-2.0.1 không đổi định dạng hay vị trí cơ sở dữ liệu so với 2.0.0. Không cần khôi phục dữ liệu chỉ để nâng cấp giao diện. Dữ liệu của ứng dụng gốc 1.7.0 vẫn nằm riêng và chưa được tự động nhập vào bản mới.
+2.0.2 không đổi định dạng hay vị trí cơ sở dữ liệu so với các bản 2.0.x. Không cần khôi phục dữ liệu chỉ để nâng cấp giao diện. Dữ liệu của ứng dụng gốc 1.7.0 vẫn nằm riêng và chưa được tự động nhập vào bản mới.

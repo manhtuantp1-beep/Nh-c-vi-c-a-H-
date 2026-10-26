@@ -10,11 +10,16 @@ from tkinter import messagebox, ttk
 
 from .models import Schedule
 from .recurrence import expand_schedule
-from .widgets import DateEntry, ScrollableForm, format_date, parse_time, ui_font
+from .widgets import DateEntry, ScrollableForm, format_date, parse_time, scale_px, ui_font
 
 RECURRENCE_LABELS = {"once": "Một lần", "weekly": "Hằng tuần", "monthly": "Hằng tháng", "yearly": "Hằng năm"}
 STATUS_LABELS = {"pending": "Chưa xác nhận", "completed": "Hoàn thành", "skipped": "Bỏ qua"}
 WEEKDAYS = ("Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7", "Chủ nhật")
+
+
+def _pixels(widget, value: int) -> int:
+    """Convert a 96-DPI layout measurement to the current Tk display DPI."""
+    return scale_px(widget, value)
 
 
 def parse_reminder_days(value: str) -> list[int]:
@@ -76,7 +81,7 @@ class CalendarView(ttk.Frame):
 
     def _build(self):
         self.columnconfigure(0, weight=1)
-        self.rowconfigure(4, weight=1, minsize=230)
+        self.rowconfigure(4, weight=1, minsize=_pixels(self, 230))
         toolbar = ttk.Frame(self)
         toolbar.grid(row=0, column=0, sticky="ew", pady=(0, 16))
         ttk.Label(toolbar, text="Lịch làm việc", style="Title.TLabel").pack(side="left")
@@ -94,7 +99,7 @@ class CalendarView(ttk.Frame):
                             style="Segment.TRadiobutton", command=self._mode_changed).pack(side="left")
         navigation = ttk.Frame(modebar)
         navigation.pack(side="right")
-        self.period_label = ttk.Label(navigation, text="", font=ui_font(self, 11, "bold"))
+        self.period_label = ttk.Label(navigation, text="", font=ui_font(self, 12, "bold"))
         self.period_label.pack(side="left", padx=(0, 12))
         ttk.Button(navigation, text="‹", width=3, style="Compact.TButton",
                    command=lambda: self._navigate(-1)).pack(side="left", padx=(0, 4))
@@ -102,7 +107,7 @@ class CalendarView(ttk.Frame):
         ttk.Button(navigation, text="›", width=3, style="Compact.TButton",
                    command=lambda: self._navigate(1)).pack(side="left", padx=(4, 0))
 
-        self.summary = ttk.Label(self, text="", style="Subtitle.TLabel", wraplength=820)
+        self.summary = ttk.Label(self, text="", style="Subtitle.TLabel", wraplength=_pixels(self, 820))
         self.summary.grid(row=2, column=0, sticky="w", pady=(0, 12))
         self.calendar_frame = ttk.Frame(self)
         self.calendar_frame.grid(row=3, column=0, sticky="ew", pady=(0, 14))
@@ -110,7 +115,7 @@ class CalendarView(ttk.Frame):
         daybox = ttk.Frame(self, style="Surface.TFrame", padding=(16, 12))
         daybox.grid(row=4, column=0, sticky="nsew")
         daybox.columnconfigure(0, weight=1)
-        daybox.rowconfigure(1, weight=1, minsize=110)
+        daybox.rowconfigure(1, weight=1, minsize=_pixels(self, 110))
         day_header = ttk.Frame(daybox, style="Surface.TFrame")
         day_header.grid(row=0, column=0, columnspan=2, sticky="ew", pady=(0, 10))
         self.day_label = ttk.Label(day_header, text="", style="Surface.TLabel", font=ui_font(self, 12, "bold"))
@@ -119,20 +124,20 @@ class CalendarView(ttk.Frame):
         self.day_count_label.pack(side="right")
         self.tree = ttk.Treeview(daybox, columns=("start", "end", "title", "status", "category"),
                                  show="headings", selectmode="browse", height=5)
-        for key, label, width in (("start", "Bắt đầu", 80), ("end", "Kết thúc", 80),
-                                  ("title", "Tên lịch", 260), ("status", "Trạng thái", 185),
+        for key, label, width in (("start", "Bắt đầu", 92), ("end", "Kết thúc", 92),
+                                  ("title", "Tên lịch", 260), ("status", "Trạng thái", 205),
                                   ("category", "Phân loại", 120)):
             self.tree.heading(key, text=label)
-            self.tree.column(key, width=width, minwidth=65, stretch=key in ("title", "category"),
+            self.tree.column(key, width=_pixels(self, width), minwidth=_pixels(self, 65), stretch=key in ("title", "category"),
                              anchor="w" if key not in ("start", "end") else "center")
         self.tree.grid(row=1, column=0, sticky="nsew")
         scrollbar = ttk.Scrollbar(daybox, orient="vertical", command=self.tree.yview)
         scrollbar.grid(row=1, column=1, sticky="ns")
         self.tree.configure(yscrollcommand=scrollbar.set)
-        self.tree.tag_configure("completed", foreground="#16734B")
-        self.tree.tag_configure("skipped", foreground="#7B8595")
-        self.tree.tag_configure("overdue", foreground="#B64739")
-        self.tree.tag_configure("snoozed", foreground="#7857AE")
+        self.tree.tag_configure("completed", foreground="#146440")
+        self.tree.tag_configure("skipped", foreground="#586A80")
+        self.tree.tag_configure("overdue", foreground="#A52B31")
+        self.tree.tag_configure("snoozed", foreground="#65448E")
         self.tree.bind("<Double-1>", lambda _e: self.edit_selected())
         self.tree.bind("<<TreeviewSelect>>", lambda _e: self._selection_changed())
         self.empty_day = ttk.Label(self.tree, text="Chưa có lịch trong ngày này.\nBấm Thêm lịch để sắp xếp thời gian.",
@@ -145,7 +150,7 @@ class CalendarView(ttk.Frame):
                                 ("Mở lại", lambda: self._set_status("pending")),
                                 ("Nhắc sau 10 phút", self._snooze),
                                 ("Sửa lịch gốc", self.edit_selected)):
-            button = ttk.Button(actions, text=label, style="Compact.TButton", command=callback)
+            button = ttk.Button(actions, text=label, width=0, style="Compact.TButton", command=callback)
             button.pack(side="left", padx=(0, 6))
             self.action_buttons.append(button)
 
@@ -244,12 +249,12 @@ class CalendarView(ttk.Frame):
             for occurrence in occurrences[:2]:
                 title = occurrence.title if len(occurrence.title) <= 18 else occurrence.title[:17] + "…"
                 label = ttk.Label(frame, text=f"{occurrence.start:%H:%M}  {title}",
-                                  style="CalendarMeta.TLabel", wraplength=90, cursor="hand2",
-                                  foreground="#16734B" if occurrence.status == "completed" else "#465775")
+                                  style="CalendarMeta.TLabel", wraplength=_pixels(self, 90), cursor="hand2",
+                                  foreground="#146440" if occurrence.status == "completed" else "#40516A")
                 label.pack(anchor="w", fill="x", pady=3)
                 label.bind("<Button-1>", lambda _event, value=day: self.show_day(value))
             if len(occurrences) > 2:
-                label = ttk.Label(frame, text=f"+ {len(occurrences) - 2} buổi", style="CalendarMeta.TLabel", cursor="hand2", wraplength=90)
+                label = ttk.Label(frame, text=f"+ {len(occurrences) - 2} buổi", style="CalendarMeta.TLabel", cursor="hand2", wraplength=_pixels(self, 90))
                 label.pack(anchor="w", pady=(3, 0))
                 label.bind("<Button-1>", lambda _event, value=day: self.show_day(value))
 
@@ -386,8 +391,10 @@ class ScheduleEditor(tk.Toplevel):
         self.title("Sửa lịch gốc" if schedule.id is not None else "Thêm lịch")
         self.transient(parent)
         self.configure(background="#F4F6FA")
-        self.geometry(f"720x{min(860, max(540, self.winfo_screenheight() - 90))}")
-        self.minsize(620, 480)
+        width = min(_pixels(self, 720), self.winfo_screenwidth() - 48)
+        height = min(_pixels(self, 860), self.winfo_screenheight() - 96)
+        self.geometry(f"{width}x{height}")
+        self.minsize(min(_pixels(self, 620), width), min(_pixels(self, 480), height))
         self.rowconfigure(1, weight=1)
         self.columnconfigure(0, weight=1)
         note = "Chỉnh sửa áp dụng cho các buổi sắp tới; các buổi đã bắt đầu hoặc xác nhận vẫn được giữ." if schedule.id is not None else "Chọn cách lặp. Lịch tháng/năm lấy ngày bắt đầu làm mốc lặp."
@@ -455,16 +462,16 @@ class ScheduleEditor(tk.Toplevel):
         self.policy_combo = ttk.Combobox(form, textvariable=self.policy_var, state="readonly",
                                          values=("Ngày cuối tháng", "Bỏ qua lần thiếu ngày"))
         field("Tháng thiếu ngày", self.policy_combo)
-        self.rule_note = ttk.Label(form, text="", wraplength=420, style="Subtitle.TLabel")
+        self.rule_note = ttk.Label(form, text="", wraplength=_pixels(self, 420), style="Subtitle.TLabel")
         field("", self.rule_note)
         section("Nhắc việc")
         minutes = ttk.Spinbox(form, from_=0, to=120, textvariable=self.minutes_var, width=8)
         field("Nhắc trước (phút)", minutes)
         field("Nhắc trước (ngày)", ttk.Entry(form, textvariable=self.days_var))
-        field("", ttk.Label(form, text="Ví dụ 7, 1: nhắc trước 7 ngày và 1 ngày. Để trống nếu không dùng.\nĐặt 0 phút để chỉ nhắc lúc bắt đầu.", wraplength=420, style="Subtitle.TLabel"))
+        field("", ttk.Label(form, text="Ví dụ 7, 1: nhắc trước 7 ngày và 1 ngày. Để trống nếu không dùng.\nĐặt 0 phút để chỉ nhắc lúc bắt đầu.", wraplength=_pixels(self, 420), style="Subtitle.TLabel"))
         section("Nội dung và áp dụng")
-        self.content = tk.Text(form, height=5, wrap="word", font=ui_font(self, 11),
-                               background="white", foreground="#17243B", insertbackground="#315EFB",
+        self.content = tk.Text(form, height=5, wrap="word", font=ui_font(self, 12),
+                               background="white", foreground="#172A43", insertbackground="#315EFB",
                                relief="flat", borderwidth=0, highlightthickness=1,
                                highlightbackground="#E3E8F0", highlightcolor="#315EFB", padx=10, pady=9)
         self.content.insert("1.0", schedule.content)
@@ -587,8 +594,10 @@ class ScheduleManager(tk.Toplevel):
         self.title("Quản lý lịch gốc")
         self.transient(parent)
         self.configure(background="#F4F6FA")
-        self.geometry("940x540")
-        self.minsize(780, 430)
+        width = min(_pixels(self, 940), self.winfo_screenwidth() - 48)
+        height = min(_pixels(self, 540), self.winfo_screenheight() - 96)
+        self.geometry(f"{width}x{height}")
+        self.minsize(min(_pixels(self, 780), width), min(_pixels(self, 430), height))
         self.columnconfigure(0, weight=1)
         self.rowconfigure(1, weight=1)
         header = ttk.Frame(self, padding=(24, 20, 24, 16))
@@ -604,9 +613,9 @@ class ScheduleManager(tk.Toplevel):
         frame.rowconfigure(0, weight=1)
         self.tree = ttk.Treeview(frame, columns=("title", "recurrence", "start", "status"), show="headings", selectmode="browse")
         for key, text, width in (("title", "Tên lịch", 330), ("recurrence", "Cách lặp", 110),
-                                  ("start", "Ngày bắt đầu", 110), ("status", "Áp dụng", 120)):
+                                  ("start", "Ngày bắt đầu", 130), ("status", "Áp dụng", 120)):
             self.tree.heading(key, text=text)
-            self.tree.column(key, width=width, minwidth=70, stretch=key == "title")
+            self.tree.column(key, width=_pixels(self, width), minwidth=_pixels(self, 70), stretch=key == "title")
         self.tree.grid(row=0, column=0, sticky="nsew")
         bar = ttk.Scrollbar(frame, orient="vertical", command=self.tree.yview)
         bar.grid(row=0, column=1, sticky="ns")
