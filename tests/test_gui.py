@@ -109,7 +109,7 @@ class DesktopTests(unittest.TestCase):
                            for grandchild in child.winfo_children()
                            if grandchild.winfo_class() == "TButton"]
                 self.assertEqual({button.cget("text") for button in buttons},
-                                 {"Chi tiết", "Bắt đầu", "Hoàn thành"})
+                                 {"Chi tiết", "Ghi chú", "Bắt đầu", "Hoàn thành"})
                 for button in buttons:
                     self.assertGreaterEqual(button.winfo_rootx(), card.winfo_rootx())
                     self.assertLessEqual(button.winfo_rootx() + button.winfo_width(),
@@ -161,10 +161,10 @@ class DesktopTests(unittest.TestCase):
             calendar.refresh()
             self.root.update()
         self.assertEqual(self.app.current_page, "calendar")
-        self.assertGreater(calendar.tree.winfo_height(), 100)
+        self.assertGreater(calendar.task_cards.canvas.winfo_height(), 100)
         self.root.geometry("1120x720")
         self.root.update()
-        self.assertGreater(calendar.tree.winfo_height(), 100)
+        self.assertGreater(calendar.task_cards.canvas.winfo_height(), 100)
 
     def test_pending_timer_handles_do_not_accumulate(self):
         called = []

@@ -110,6 +110,13 @@ def configure_style(root: tk.Tk) -> None:
                     padding=(16, 7), relief="flat", borderwidth=0, font=ui_font(root, 11))
     style.map("Segment.TRadiobutton", background=[("selected", PRIMARY), ("active", BLUE_TINT)],
               foreground=[("selected", SURFACE), ("active", PRIMARY)])
+    style.configure("Calendar.TNotebook", background=SURFACE, borderwidth=0, tabmargins=0)
+    style.configure("Calendar.TNotebook.Tab", background=BG, foreground=MUTED,
+                    padding=(12, 4), borderwidth=0, font=ui_font(root, 11, "bold"),
+                    lightcolor=SURFACE, darkcolor=SURFACE)
+    style.map("Calendar.TNotebook.Tab",
+              background=[("selected", PRIMARY), ("active", BLUE_TINT)],
+              foreground=[("selected", SURFACE), ("active", PRIMARY)])
     style.configure("TLabelframe", background=SURFACE, bordercolor=BORDER, borderwidth=1, relief="solid")
     style.configure("TLabelframe.Label", background=SURFACE, foreground=INK, font=ui_font(root, 12, "bold"))
     style.configure("Treeview", rowheight=round(38 * getattr(root, "_layout_scale", 1.0)), font=ui_font(root, 11), background=SURFACE,

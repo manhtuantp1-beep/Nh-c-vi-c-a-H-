@@ -21,6 +21,7 @@ class Task:
     updated_at: datetime = field(default_factory=datetime.now)
     completed_at: datetime | None = None
     reason: str = ""
+    notes: str = ""
 
 
 @dataclass

@@ -17,7 +17,7 @@ from typing import Any
 from .models import Task, Schedule, Occurrence, TASK_STATUSES, OCCURRENCE_STATUSES
 
 APP_ID = "nhacviec-anhha-rebuilt"
-SCHEMA_VERSION = 1
+SCHEMA_VERSION = 2
 DEFAULT_SETTINGS = {"daily_time": "09:00", "days_before": 7, "notifications_enabled": True}
 
 
@@ -61,6 +61,11 @@ class Storage:
             self.connection.execute("PRAGMA trusted_schema=OFF")
             if existing:
                 self._validate_database(self.connection)
+                if self.connection.execute("PRAGMA user_version").fetchone()[0] == 1:
+                    # Keep an untouched v1 copy before the additive upgrade.
+                    self.backup(self.path.with_name(self.path.stem + ".pre-upgrade-" +
+                                datetime.now().strftime("%Y%m%d-%H%M%S-%f") + ".db"))
+                    self._migrate_database(self.connection)
             else:
                 self._initialize()
             self.connection.execute("PRAGMA journal_mode=WAL")
@@ -73,7 +78,7 @@ class Storage:
         try:
             version = conn.execute("PRAGMA user_version").fetchone()[0]
             marker = conn.execute("SELECT value FROM app_metadata WHERE key='app_id'").fetchone()
-            if version != SCHEMA_VERSION or not marker or marker[0] != APP_ID:
+            if version not in (1, SCHEMA_VERSION) or not marker or marker[0] != APP_ID:
                 raise UnsupportedDatabase("Cơ sở dữ liệu không thuộc bản dựng mới hoặc sai phiên bản.")
             tables = {r[0] for r in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")}
             required = {"tasks", "schedules", "occurrence_overrides", "settings", "notification_log", "schedule_pauses"}
@@ -86,10 +91,14 @@ class Storage:
                 "settings": {"key", "value"}, "notification_log": {"key", "delivered_at"},
                 "schedule_pauses": {"id", "schedule_id", "paused_at", "resumed_at"},
             }
+            if version >= 2:
+                columns["tasks"].add("notes")
             for table, expected in columns.items():
                 actual = {r[1] for r in conn.execute(f"PRAGMA table_info({table})")}
                 if not expected.issubset(actual):
                     raise UnsupportedDatabase("Cơ sở dữ liệu có cấu trúc không được hỗ trợ.")
+                if table == "tasks" and version == 1 and "notes" in actual:
+                    raise UnsupportedDatabase("Phiên bản cơ sở dữ liệu không khớp cấu trúc công việc.")
             if conn.execute("PRAGMA quick_check").fetchone()[0] != "ok":
                 raise UnsupportedDatabase("Cơ sở dữ liệu bị lỗi; không thực hiện khôi phục.")
             if conn.execute("PRAGMA foreign_key_check").fetchone():
@@ -97,7 +106,7 @@ class Storage:
             # Parse all definitions so invalid stored rules cannot be restored silently.
             for row in conn.execute("SELECT * FROM tasks"):
                 task = Storage._task(row)
-                if (not task.title.strip() or task.status not in TASK_STATUSES
+                if (not task.title.strip() or task.status not in TASK_STATUSES or not isinstance(task.notes, str)
                         or not all(isinstance(value, datetime) for value in (task.deadline, task.created_at, task.updated_at))):
                     raise UnsupportedDatabase("Dữ liệu công việc không hợp lệ.")
             from .recurrence import validate_schedule
@@ -125,6 +134,19 @@ class Storage:
         except (sqlite3.Error, ValueError, TypeError, KeyError, IndexError) as exc:
             raise UnsupportedDatabase("Không nhận diện được cơ sở dữ liệu của bản dựng mới.") from exc
 
+    @staticmethod
+    def _migrate_database(conn: sqlite3.Connection) -> None:
+        """Upgrade only a database already checked by _validate_database.
+
+        Both the new column and version marker commit together. Existing text,
+        identifiers, task state and calendar history stay untouched.
+        """
+        if conn.execute("PRAGMA user_version").fetchone()[0] == 1:
+            with conn:
+                conn.execute("BEGIN IMMEDIATE")
+                conn.execute("ALTER TABLE tasks ADD COLUMN notes TEXT NOT NULL DEFAULT ''")
+                conn.execute(f"PRAGMA user_version={SCHEMA_VERSION}")
+
     def _initialize(self) -> None:
         with self.connection:
             self.connection.executescript("""
@@ -135,7 +157,7 @@ class Storage:
                     content TEXT NOT NULL DEFAULT '', requirements TEXT NOT NULL DEFAULT '',
                     status TEXT NOT NULL CHECK(status IN ('todo','in_progress','completed','canceled')),
                     created_at TEXT NOT NULL, updated_at TEXT NOT NULL,
-                    completed_at TEXT, reason TEXT NOT NULL DEFAULT '');
+                    completed_at TEXT, reason TEXT NOT NULL DEFAULT '', notes TEXT NOT NULL DEFAULT '');
                 CREATE INDEX tasks_deadline ON tasks(deadline);
                 CREATE TABLE schedules(
                     id INTEGER PRIMARY KEY,title TEXT NOT NULL,category TEXT NOT NULL DEFAULT '',
@@ -172,14 +194,17 @@ class Storage:
     @staticmethod
     def _task(row: sqlite3.Row) -> Task:
         data = dict(row)
+        data.setdefault("notes", "")
         for name in ("deadline", "created_at", "updated_at", "completed_at"):
             data[name] = _datetime(data[name]) if data[name] else None
         return Task(**data)
 
-    def create_task(self, title: str, deadline: datetime, category: str = "", content: str = "", requirements: str = "") -> Task:
+    def create_task(self, title: str, deadline: datetime, category: str = "", content: str = "", requirements: str = "", notes: str = "") -> Task:
         title = title.strip()
         if not title:
             raise ValueError("Tên công việc không được để trống.")
+        if not isinstance(notes, str):
+            raise ValueError("Ghi chú công việc phải là văn bản.")
         deadline = _datetime(deadline)
         now = datetime.now().replace(microsecond=0)
         stem = now.strftime("%H:%M-%d%m%Y")
@@ -189,9 +214,9 @@ class Storage:
             code = f"{stem}-{suffix:02d}"
         with self.connection:
             cur = self.connection.execute("""INSERT INTO tasks
-                (code,title,deadline,category,content,requirements,status,created_at,updated_at,reason)
-                VALUES(?,?,?,?,?,?,'todo',?,?,'')""",
-                (code, title, deadline.isoformat(), category.strip(), content, requirements, now.isoformat(), now.isoformat()))
+                (code,title,deadline,category,content,requirements,status,created_at,updated_at,reason,notes)
+                VALUES(?,?,?,?,?,?,'todo',?,?,'',?)""",
+                (code, title, deadline.isoformat(), category.strip(), content, requirements, now.isoformat(), now.isoformat(), notes))
         return self.get_task(cur.lastrowid)
 
     def get_task(self, task_id: int) -> Task | None:
@@ -202,7 +227,7 @@ class Storage:
         task = self.get_task(task_id)
         if task is None:
             raise ValueError("Không tìm thấy công việc.")
-        allowed = {"title", "deadline", "category", "content", "requirements", "status", "reason"}
+        allowed = {"title", "deadline", "category", "content", "requirements", "status", "reason", "notes"}
         if fields.keys() - allowed:
             raise ValueError("Trường công việc không được hỗ trợ.")
         task = replace(task, **fields)
@@ -210,14 +235,16 @@ class Storage:
         task.deadline = _datetime(task.deadline)
         if not task.title or task.status not in TASK_STATUSES:
             raise ValueError("Tên hoặc trạng thái công việc không hợp lệ.")
+        if not isinstance(task.notes, str):
+            raise ValueError("Ghi chú công việc phải là văn bản.")
         task.updated_at = datetime.now().replace(microsecond=0)
         task.completed_at = (task.completed_at or task.updated_at) if task.status == "completed" else None
         with self.connection:
             self.connection.execute("""UPDATE tasks SET title=?,deadline=?,category=?,content=?,requirements=?,
-                status=?,updated_at=?,completed_at=?,reason=? WHERE id=?""",
+                status=?,updated_at=?,completed_at=?,reason=?,notes=? WHERE id=?""",
                 (task.title, task.deadline.isoformat(), task.category.strip(), task.content, task.requirements,
                  task.status, task.updated_at.isoformat(), task.completed_at.isoformat() if task.completed_at else None,
-                 task.reason, task_id))
+                 task.reason, task.notes, task_id))
         return self.get_task(task_id)
 
     def set_task_status(self, task_id: int, status: str, reason: str = "") -> Task:
@@ -479,11 +506,20 @@ class Storage:
         try:
             conn.execute("PRAGMA trusted_schema=OFF")
             self._validate_database(conn)
-            saved = self.path.with_name("tasks.pre-restore-" + datetime.now().strftime("%Y%m%d-%H%M%S-%f") + ".db")
-            self.backup(saved)
-            self.connection.commit()
-            conn.backup(self.connection)
-            self.connection.commit()
-            return saved
+            # Stage and upgrade the incoming copy before replacing live data.
+            # A v1 backup remains v1 on disk and can still be used independently.
+            with tempfile.TemporaryDirectory(prefix=".nhacviec-restore-", dir=self.path.parent) as directory:
+                with closing(sqlite3.connect(Path(directory) / "staged.db")) as staged:
+                    staged.row_factory = sqlite3.Row
+                    staged.execute("PRAGMA trusted_schema=OFF")
+                    conn.backup(staged)
+                    self._migrate_database(staged)
+                    self._validate_database(staged)
+                    saved = self.path.with_name("tasks.pre-restore-" + datetime.now().strftime("%Y%m%d-%H%M%S-%f") + ".db")
+                    self.backup(saved)
+                    self.connection.commit()
+                    staged.backup(self.connection)
+                    self.connection.commit()
+                    return saved
         finally:
             conn.close()

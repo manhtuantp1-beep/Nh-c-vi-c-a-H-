@@ -18,7 +18,7 @@ from .reminders import ReminderEngine
 from .widgets import ui_font, scale_px
 from .display import sync_tk_scaling
 
-from .dialogs import TaskDialog, SettingsDialog, ExportDialog, STATUS_LABELS
+from .dialogs import TaskDialog, NotesDialog, SettingsDialog, ExportDialog, STATUS_LABELS
 from .task_ui import TaskListPage, ALL_FILTER, TODO_FILTER
 from .theme import BG, INK, MUTED, PRIMARY, BORDER, NAVY, NAV_TEXT, NAV_MUTED, configure_style, line_icon
 
@@ -129,7 +129,7 @@ class NhacViecApp:
     def show_page(self, key):
         if key not in self.pages:
             if key == "calendar":
-                self.pages[key] = CalendarView(self.content, self.store, on_change=self.refresh_current)
+                self.pages[key] = CalendarView(self.content, self.store, on_change=self.refresh_current, app=self)
             else:
                 self.pages[key] = TaskListPage(self.content, self, key)
         for page in self.pages.values():
@@ -159,7 +159,11 @@ class NhacViecApp:
             return "break"
 
     def new_task(self):
-        return TaskDialog(self)
+        dialog = TaskDialog(self)
+        if self.current_page == "calendar":
+            dialog.date_entry.set_date(self.pages["calendar"].selected_date)
+            dialog._initial = dialog.snapshot()
+        return dialog
 
     def edit_task(self, task_id):
         task = self.store.get_task(task_id)
@@ -167,6 +171,13 @@ class NhacViecApp:
             messagebox.showerror("Không tìm thấy", "Công việc không còn tồn tại.", parent=self.root)
             return None
         return TaskDialog(self, task)
+
+    def edit_task_notes(self, task_id):
+        task = self.store.get_task(task_id)
+        if task is None:
+            messagebox.showerror("Không tìm thấy", "Công việc không còn tồn tại.", parent=self.root)
+            return None
+        return NotesDialog(self, task)
 
     def transition_task(self, task_id, status, reason=""):
         self.store.set_task_status(task_id, status, reason=reason)
@@ -282,7 +293,7 @@ class NhacViecApp:
             return
         # Prevent discarding an open task form without the form's own check.
         for child in self.root.winfo_children():
-            if isinstance(child, TaskDialog):
+            if isinstance(child, (TaskDialog, NotesDialog)):
                 child.cancel()
                 if child.winfo_exists():
                     return

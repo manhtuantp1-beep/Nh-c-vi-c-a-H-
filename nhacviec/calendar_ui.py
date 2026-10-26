@@ -10,6 +10,7 @@ from tkinter import messagebox, ttk
 
 from .models import Schedule
 from .recurrence import expand_schedule
+from .task_ui import TaskCards
 from .widgets import DateEntry, ScrollableForm, format_date, parse_time, scale_px, ui_font
 
 RECURRENCE_LABELS = {"once": "Một lần", "weekly": "Hằng tuần", "monthly": "Hằng tháng", "yearly": "Hằng năm"}
@@ -62,26 +63,70 @@ def close_schedule_editors(widget) -> bool:
     return True
 
 
-class CalendarView(ttk.Frame):
-    """CalendarView(parent, store, on_change=None); ``refresh()`` rereads storage."""
+class _CalendarTaskActions:
+    """Keep the standalone calendar usable without a whole application shell."""
 
-    def __init__(self, parent, store, on_change=None):
+    def __init__(self, view):
+        self.view, self.store = view, view.store
+        self.root = view.winfo_toplevel()
+
+    def refresh_current(self):
+        self.view._changed()
+
+    def new_task(self):
+        from .dialogs import TaskDialog
+        return TaskDialog(self)
+
+    def edit_task(self, task_id):
+        from .dialogs import TaskDialog
+        task = self.store.get_task(task_id)
+        if task:
+            TaskDialog(self, task)
+
+    def edit_task_notes(self, task_id):
+        from .dialogs import NotesDialog
+        task = self.store.get_task(task_id)
+        if task:
+            NotesDialog(self, task)
+
+    def transition_task(self, task_id, status, reason=""):
+        try:
+            self.store.set_task_status(task_id, status, reason)
+            self.refresh_current()
+        except (ValueError, OSError, sqlite3.Error) as exc:
+            messagebox.showerror("Không lưu được công việc", str(exc), parent=self.root)
+
+
+class CalendarView(ttk.Frame):
+    """Combine task deadlines and recurring appointments without copying tasks."""
+
+    def __init__(self, parent, store, on_change=None, app=None):
         super().__init__(parent, padding=(24, 18))
         self.store = store
         self.on_change = on_change
+        self.app = app or _CalendarTaskActions(self)
         self.mode = tk.StringVar(self, "week")
         self.anchor = date.today()
         self.selected_date = self.anchor
         self._occurrences = []
         self._by_day = defaultdict(list)
+        self._tasks = []
+        self._tasks_by_day = defaultdict(list)
         self._selected_occurrences = {}
+        self._rendered_date = None
         self._range = (self.anchor, self.anchor)
         self._build()
         self.refresh()
 
     def _build(self):
+        # Month cells can contain both kinds of item. Keep the full readable
+        # font while reducing only padding so a six-row month leaves space
+        # for the selected day's task cards in a 1120 × 720 window.
+        style = ttk.Style(self)
+        for base in ("Day.TButton", "Today.Day.TButton", "Selected.Day.TButton"):
+            style.configure(f"Calendar.{base}", padding=(4, 1))
         self.columnconfigure(0, weight=1)
-        self.rowconfigure(4, weight=1, minsize=_pixels(self, 230))
+        self.rowconfigure(4, weight=1, minsize=_pixels(self, 210))
         toolbar = ttk.Frame(self)
         toolbar.grid(row=0, column=0, sticky="ew", pady=(0, 16))
         ttk.Label(toolbar, text="Lịch làm việc", style="Title.TLabel").pack(side="left")
@@ -109,6 +154,7 @@ class CalendarView(ttk.Frame):
 
         self.summary = ttk.Label(self, text="", style="Subtitle.TLabel", wraplength=_pixels(self, 820))
         self.summary.grid(row=2, column=0, sticky="w", pady=(0, 12))
+        self.bind("<Configure>", lambda event: self.summary.configure(wraplength=max(_pixels(self, 300), event.width - 48)))
         self.calendar_frame = ttk.Frame(self)
         self.calendar_frame.grid(row=3, column=0, sticky="ew", pady=(0, 14))
 
@@ -122,7 +168,20 @@ class CalendarView(ttk.Frame):
         self.day_label.pack(side="left")
         self.day_count_label = ttk.Label(day_header, text="", style="CalendarMeta.TLabel")
         self.day_count_label.pack(side="right")
-        self.tree = ttk.Treeview(daybox, columns=("start", "end", "title", "status", "category"),
+        self.day_notebook = ttk.Notebook(daybox, style="Calendar.TNotebook")
+        self.day_notebook.grid(row=1, column=0, columnspan=2, sticky="nsew")
+        self.tasks_tab = ttk.Frame(self.day_notebook)
+        self.schedules_tab = ttk.Frame(self.day_notebook, style="Surface.TFrame", padding=(0, 8, 0, 0))
+        self.schedules_tab.columnconfigure(0, weight=1)
+        self.schedules_tab.rowconfigure(0, weight=1)
+        self.day_notebook.add(self.tasks_tab, text="Công việc (0)")
+        self.day_notebook.add(self.schedules_tab, text="Lịch hẹn (0)")
+        self.task_cards = TaskCards(self.tasks_tab, self.app,
+                                    empty_title="Không có công việc đến hạn ngày này",
+                                    empty_message="Công việc sẽ tự xuất hiện tại ngày deadline anh đã chọn.",
+                                    empty_action=("Tạo công việc", self.add_task))
+        self.task_cards.pack(fill="both", expand=True, pady=(8, 0))
+        self.tree = ttk.Treeview(self.schedules_tab, columns=("start", "end", "title", "status", "category"),
                                  show="headings", selectmode="browse", height=5)
         for key, label, width in (("start", "Bắt đầu", 92), ("end", "Kết thúc", 92),
                                   ("title", "Tên lịch", 260), ("status", "Trạng thái", 205),
@@ -130,9 +189,9 @@ class CalendarView(ttk.Frame):
             self.tree.heading(key, text=label)
             self.tree.column(key, width=_pixels(self, width), minwidth=_pixels(self, 65), stretch=key in ("title", "category"),
                              anchor="w" if key not in ("start", "end") else "center")
-        self.tree.grid(row=1, column=0, sticky="nsew")
-        scrollbar = ttk.Scrollbar(daybox, orient="vertical", command=self.tree.yview)
-        scrollbar.grid(row=1, column=1, sticky="ns")
+        self.tree.grid(row=0, column=0, sticky="nsew")
+        scrollbar = ttk.Scrollbar(self.schedules_tab, orient="vertical", command=self.tree.yview)
+        scrollbar.grid(row=0, column=1, sticky="ns")
         self.tree.configure(yscrollcommand=scrollbar.set)
         self.tree.tag_configure("completed", foreground="#146440")
         self.tree.tag_configure("skipped", foreground="#586A80")
@@ -142,8 +201,8 @@ class CalendarView(ttk.Frame):
         self.tree.bind("<<TreeviewSelect>>", lambda _e: self._selection_changed())
         self.empty_day = ttk.Label(self.tree, text="Chưa có lịch trong ngày này.\nBấm Thêm lịch để sắp xếp thời gian.",
                                    style="CalendarMeta.TLabel", anchor="center", justify="center")
-        actions = ttk.Frame(daybox, style="Surface.TFrame")
-        actions.grid(row=2, column=0, columnspan=2, sticky="ew", pady=(10, 0))
+        actions = ttk.Frame(self.schedules_tab, style="Surface.TFrame")
+        actions.grid(row=1, column=0, columnspan=2, sticky="ew", pady=(10, 0))
         self.action_buttons = []
         for label, callback in (("Hoàn thành", lambda: self._set_status("completed")),
                                 ("Bỏ qua", lambda: self._set_status("skipped")),
@@ -169,9 +228,17 @@ class CalendarView(ttk.Frame):
         except (ValueError, OSError, sqlite3.Error) as exc:
             messagebox.showerror("Không đọc được lịch", str(exc), parent=self.winfo_toplevel())
             self._occurrences = []
+        try:
+            self._tasks = self.store.list_tasks(date_from=self._range[0], date_to=self._range[1])
+        except (ValueError, OSError, sqlite3.Error) as exc:
+            messagebox.showerror("Không đọc được công việc", str(exc), parent=self.winfo_toplevel())
+            self._tasks = []
         self._by_day = defaultdict(list)
+        self._tasks_by_day = defaultdict(list)
         for occurrence in self._occurrences:
             self._by_day[occurrence.start.date()].append(occurrence)
+        for task in self._tasks:
+            self._tasks_by_day[task.deadline.date()].append(task)
         first, last = self._range
         if self.mode.get() == "week":
             self.period_label.configure(text=f"{format_date(first)} — {format_date(last)}")
@@ -179,10 +246,8 @@ class CalendarView(ttk.Frame):
             self.period_label.configure(text=f"Tháng {self.anchor.month:02d} / {self.anchor.year}")
         else:
             self.period_label.configure(text=f"Năm {self.anchor.year}")
-        completed = sum(o.status == "completed" for o in self._occurrences)
-        skipped = sum(o.status == "skipped" for o in self._occurrences)
         hours = sum((o.end - o.start).total_seconds() / 3600 for o in self._occurrences)
-        self.summary.configure(text=f"{len(self._occurrences)} buổi · {hours:g} giờ dự kiến · {completed} hoàn thành · {skipped} bỏ qua · {len(self._occurrences) - completed - skipped} chưa xác nhận")
+        self.summary.configure(text=f"{len(self._tasks)} công việc theo ngày deadline · {len(self._occurrences)} lịch hẹn · {hours:g} giờ lịch hẹn")
         self._draw_calendar()
         self._draw_day()
 
@@ -209,6 +274,7 @@ class CalendarView(ttk.Frame):
 
     def show_day(self, on_date: date):
         self.selected_date = on_date
+        self.day_notebook.select(self.tasks_tab)
         if not self._range[0] <= on_date <= self._range[1]:
             self.anchor = on_date
             self.refresh()
@@ -244,19 +310,19 @@ class CalendarView(ttk.Frame):
                                 command=lambda value=day: self.show_day(value))
             button.pack(fill="x", pady=(0, 6))
             occurrences = self._by_day.get(day, [])
-            if not occurrences:
+            tasks = self._tasks_by_day.get(day, [])
+            counts = []
+            if tasks:
+                counts.append(f"{len(tasks)} công việc")
+            if occurrences:
+                counts.append(f"{len(occurrences)} lịch hẹn")
+            if counts:
+                count_label = ttk.Label(frame, text="\n".join(counts), style="CalendarMeta.TLabel",
+                                        wraplength=_pixels(self, 95), cursor="hand2")
+                count_label.pack(anchor="w", fill="x", pady=(3, 0))
+                count_label.bind("<Button-1>", lambda _event, value=day: self.show_day(value))
+            else:
                 ttk.Label(frame, text="Trống", style="CalendarMeta.TLabel").pack(anchor="w", pady=(6, 3))
-            for occurrence in occurrences[:2]:
-                title = occurrence.title if len(occurrence.title) <= 18 else occurrence.title[:17] + "…"
-                label = ttk.Label(frame, text=f"{occurrence.start:%H:%M}  {title}",
-                                  style="CalendarMeta.TLabel", wraplength=_pixels(self, 90), cursor="hand2",
-                                  foreground="#146440" if occurrence.status == "completed" else "#40516A")
-                label.pack(anchor="w", fill="x", pady=3)
-                label.bind("<Button-1>", lambda _event, value=day: self.show_day(value))
-            if len(occurrences) > 2:
-                label = ttk.Label(frame, text=f"+ {len(occurrences) - 2} buổi", style="CalendarMeta.TLabel", cursor="hand2", wraplength=_pixels(self, 90))
-                label.pack(anchor="w", pady=(3, 0))
-                label.bind("<Button-1>", lambda _event, value=day: self.show_day(value))
 
     def _draw_month(self):
         year, month = self.anchor.year, self.anchor.month
@@ -269,9 +335,14 @@ class CalendarView(ttk.Frame):
                 if not day:
                     continue
                 value = date(year, month, day)
-                count = len(self._by_day.get(value, []))
-                label = f"{day:02d}" + (f"   · {count}" if count else "")
-                button = ttk.Button(self.calendar_frame, text=label, style=self._day_style(value),
+                task_count = len(self._tasks_by_day.get(value, []))
+                schedule_count = len(self._by_day.get(value, []))
+                label = f"{day:02d}"
+                if task_count:
+                    label += f" · {task_count} việc"
+                if schedule_count:
+                    label += ("\n" if task_count else " · ") + f"{schedule_count} lịch hẹn"
+                button = ttk.Button(self.calendar_frame, text=label, style="Calendar." + self._day_style(value), width=0,
                                     command=lambda d=value: self.show_day(d))
                 button.grid(row=row, column=col, sticky="nsew", padx=2, pady=2)
 
@@ -280,13 +351,9 @@ class CalendarView(ttk.Frame):
         for col in range(4):
             self.calendar_frame.columnconfigure(col, weight=1, uniform="year")
         for month in range(1, 13):
-            days = sorted(day.day for day, items in self._by_day.items() if day.month == month and items)
-            count = sum(len(items) for day, items in self._by_day.items() if day.month == month)
-            dates = ", ".join(f"{day:02d}" for day in days[:4])
-            if len(days) > 4:
-                dates += "…"
-            detail = "Ngày " + dates if dates else "Chưa có lịch"
-            text = f"Tháng {month:02d}    ·    {count} buổi\n{detail}"
+            task_count = sum(len(items) for day, items in self._tasks_by_day.items() if day.month == month)
+            schedule_count = sum(len(items) for day, items in self._by_day.items() if day.month == month)
+            text = f"Tháng {month:02d} · {task_count} việc\n{schedule_count} lịch hẹn"
             button = ttk.Button(self.calendar_frame, text=text, style="Month.TButton",
                                 command=lambda m=month: self._open_month(m))
             button.grid(row=(month - 1) // 4, column=(month - 1) % 4, sticky="nsew", padx=3, pady=3)
@@ -301,8 +368,15 @@ class CalendarView(ttk.Frame):
         self._selected_occurrences = {}
         now = datetime.now()
         values = sorted(self._by_day.get(self.selected_date, []), key=lambda item: (item.start, item.title))
+        tasks = self._tasks_by_day.get(self.selected_date, [])
+        self.task_cards.set_tasks(tasks)
+        if self._rendered_date != self.selected_date:
+            self.task_cards.canvas.yview_moveto(0)
+            self._rendered_date = self.selected_date
+        self.day_notebook.tab(self.tasks_tab, text=f"Công việc ({len(tasks)})")
+        self.day_notebook.tab(self.schedules_tab, text=f"Lịch hẹn ({len(values)})")
         self.day_label.configure(text=f"{WEEKDAYS[self.selected_date.weekday()]}, {format_date(self.selected_date)}")
-        self.day_count_label.configure(text=f"{len(values)} buổi" if values else "Chưa có lịch trong ngày")
+        self.day_count_label.configure(text=f"{len(tasks)} công việc · {len(values)} lịch hẹn")
         if values:
             self.empty_day.place_forget()
         else:
@@ -371,6 +445,12 @@ class CalendarView(ttk.Frame):
     def add_schedule(self):
         initial = Schedule(start_date=self.selected_date)
         ScheduleEditor(self.winfo_toplevel(), self.store, initial, on_saved=self._changed)
+
+    def add_task(self):
+        dialog = self.app.new_task()
+        if dialog is not None:
+            dialog.date_entry.set_date(self.selected_date)
+            dialog._initial = dialog.snapshot()
 
     def edit_selected(self):
         occurrence = self._selected()

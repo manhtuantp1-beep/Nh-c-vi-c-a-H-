@@ -56,7 +56,7 @@ class ExcelTests(unittest.TestCase):
         try:
             self.assertEqual(wb.active.max_row, 1)
             self.assertEqual(wb["Lịch gốc"].max_row, 1)
-            self.assertEqual(wb.active.tables["DuLieuCongViec"].ref, "A1:U1")
+            self.assertEqual(wb.active.tables["DuLieuCongViec"].ref, "A1:V1")
         finally:
             wb.close()
 

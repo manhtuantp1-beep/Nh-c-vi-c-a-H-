@@ -67,7 +67,7 @@ jobs:
       - name: Smoke-test installation and uninstallation
         shell: pwsh
         run: |
-          $setup = Join-Path $PWD 'dist\NhacViecAnhHa-Setup-2.0.2-x64.exe'
+          $setup = Join-Path $PWD 'dist\NhacViecAnhHa-Setup-2.0.3-x64.exe'
           $installDir = Join-Path $env:RUNNER_TEMP 'NhacViecAnhHaInstallSmoke'
           $sentinels = @{}
           foreach ($folderName in @('NhacViecAnhHaMoi', 'NhacViecAnhHa')) {
@@ -87,7 +87,7 @@ jobs:
           if ($check.ExitCode -ne 0) { throw "Installed application self-test failed" }
           if (-not (Test-Path $reportPath)) { throw "Installed application did not write its self-test report" }
           $report = Get-Content $reportPath -Raw | ConvertFrom-Json
-          if ($report.passed -ne $true -or $report.gui -ne $false -or $report.version -ne '2.0.2' -or @($report.checks).Count -eq 0) {
+          if ($report.passed -ne $true -or $report.gui -ne $false -or $report.version -ne '2.0.3' -or @($report.checks).Count -eq 0) {
             throw "Installed application did not pass the expected checks"
           }
           $guiReportPath = Join-Path $env:RUNNER_TEMP 'installed-gui-smoke-test.json'
@@ -96,7 +96,7 @@ jobs:
           $guiCheck.Refresh()
           if ($guiCheck.ExitCode -ne 0 -or -not (Test-Path $guiReportPath)) { throw 'Installed GUI check failed.' }
           $guiReport = Get-Content $guiReportPath -Raw | ConvertFrom-Json
-          if ($guiReport.passed -ne $true -or $guiReport.gui -ne $true -or $guiReport.version -cne '2.0.2' -or
+          if ($guiReport.passed -ne $true -or $guiReport.gui -ne $true -or $guiReport.version -cne '2.0.3' -or
               $guiReport.display.awareness -cne 'per-monitor-v2' -or $guiReport.display.window_awareness -cne 'per-monitor-v2') {
             throw 'Installed application did not retain native PerMonitorV2 rendering.'
           }
@@ -117,9 +117,9 @@ jobs:
       - name: Upload installer and checksum
         uses: actions/upload-artifact@v4
         with:
-          name: NhacViecAnhHa-Windows-x64-2.0.2
+          name: NhacViecAnhHa-Windows-x64-2.0.3
           path: |
-            dist/NhacViecAnhHa-Setup-2.0.2-x64.exe
+            dist/NhacViecAnhHa-Setup-2.0.3-x64.exe
             dist/SHA256SUMS.txt
             dist/self-test.json
             dist/gui-smoke-test.json

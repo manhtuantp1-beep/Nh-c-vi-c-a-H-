@@ -6,12 +6,14 @@ from datetime import date, datetime, time, timedelta
 from pathlib import Path
 from tempfile import TemporaryDirectory
 import tkinter as tk
+from tkinter import ttk
 import unittest
 from unittest.mock import patch
 
 from nhacviec.calendar_ui import CalendarView, ScheduleEditor, ScheduleManager, close_schedule_editors, parse_reminder_days
 from nhacviec.models import Schedule
 from nhacviec.storage import Storage
+from nhacviec.theme import configure_style
 from nhacviec.widgets import DateEntry, parse_date, parse_time
 
 
@@ -83,6 +85,156 @@ class CalendarTkTests(unittest.TestCase):
         self.assertEqual(self.view.mode.get(), "month")
         self.view.show_day(date(2026, 3, 31))
         self.assertEqual(len(self.view.tree.get_children()), 1)
+
+    def test_deadline_date_groups_every_task_status_without_copying(self):
+        day = date(2026, 10, 27)
+        tasks = []
+        for index, status in enumerate(("todo", "in_progress", "completed", "canceled")):
+            task = self.store.create_task(f"Việc {status}", datetime.combine(day, time(index, 30)))
+            if status != "todo":
+                task = self.store.set_task_status(task.id, status)
+            tasks.append(task)
+        self.store.create_task("Ngày khác", datetime(2026, 10, 28, 0, 0))
+        self.store.create_task("Năm khác", datetime(2025, 10, 27, 23, 59))
+        self.view.anchor = self.view.selected_date = day
+        for mode in ("week", "month", "year"):
+            self.view.mode.set(mode)
+            self.view.refresh()
+            self.root.update()
+            shown = self.view.task_cards.visible_tasks
+            self.assertEqual([task.id for task in shown], [task.id for task in tasks])
+            self.assertEqual({task.status for task in shown}, {"todo", "in_progress", "completed", "canceled"})
+            self.assertEqual(self.view.day_notebook.tab(self.view.tasks_tab, "text"), "Công việc (4)")
+            self.assertEqual(self.view.day_count_label.cget("text"), "4 công việc · 0 lịch hẹn")
+        self.assertEqual(len(self.store.list_tasks()), 6)
+
+    def test_task_counts_and_recurring_appointments_remain_distinct(self):
+        day = date(2026, 10, 27)
+        for hour in (0, 23):
+            self.store.create_task(f"Deadline {hour}", datetime.combine(day, time(hour, 59)))
+        self.make_schedule(start_date=day, recurrence="once")
+        self.view.anchor = self.view.selected_date = day
+        self.view.mode.set("month")
+        self.view.refresh()
+        self.root.update()
+        self.assertEqual(len(self.view._tasks_by_day[day]), 2)
+        self.assertEqual(len(self.view._by_day[day]), 1)
+        self.assertEqual(len(self.view.tree.get_children()), 1)
+        self.assertEqual(self.view.day_count_label.cget("text"), "2 công việc · 1 lịch hẹn")
+        self.assertEqual(self.view.summary.cget("text"), "2 công việc theo ngày deadline · 1 lịch hẹn · 1 giờ lịch hẹn")
+        month_buttons = [widget for widget in self.view.calendar_frame.winfo_children()
+                         if isinstance(widget, ttk.Button)]
+        self.assertIn("27 · 2 việc\n1 lịch hẹn", [widget.cget("text") for widget in month_buttons])
+        self.view.mode.set("year")
+        self.view.refresh()
+        self.assertIn("Tháng 10 · 2 việc\n1 lịch hẹn", [widget.cget("text") for widget in self.view.calendar_frame.winfo_children()])
+
+    def test_clicking_deadline_day_opens_shared_task_cards(self):
+        day = date(2026, 10, 27)
+        task = self.store.create_task("Cần xem từ lịch", datetime.combine(day, time(17)))
+        self.view.anchor = self.view.selected_date = date(2026, 10, 1)
+        self.view.mode.set("month")
+        self.view.refresh()
+        self.view.day_notebook.select(self.view.schedules_tab)
+        button = next(widget for widget in self.view.calendar_frame.winfo_children()
+                      if isinstance(widget, ttk.Button) and widget.cget("text") == "27 · 1 việc")
+        button.invoke()
+        self.root.update()
+        self.assertEqual(self.view.selected_date, day)
+        self.assertEqual(self.view.day_notebook.select(), str(self.view.tasks_tab))
+        self.assertEqual([value.id for value in self.view.task_cards.visible_tasks], [task.id])
+        self.assertIn(task.id, self.view.task_cards.cards_by_id)
+
+    def test_editing_deadline_moves_task_and_counts_after_refresh(self):
+        first, second = date(2026, 10, 27), date(2026, 10, 28)
+        task = self.store.create_task("Chuyển deadline", datetime.combine(first, time(17)))
+        self.view.anchor = self.view.selected_date = first
+        self.view.mode.set("month")
+        self.view.refresh()
+        self.store.update_task(task.id, deadline=datetime.combine(second, time(9)))
+        self.view.refresh()
+        self.assertEqual(self.view.task_cards.visible_tasks, [])
+        self.assertEqual(len(self.view._tasks_by_day.get(first, [])), 0)
+        self.assertEqual([value.id for value in self.view._tasks_by_day[second]], [task.id])
+        self.view.show_day(second)
+        self.assertEqual([value.id for value in self.view.task_cards.visible_tasks], [task.id])
+        self.assertEqual(len(self.store.list_tasks()), 1)
+
+    def test_calendar_task_actions_update_the_existing_task(self):
+        day = date(2026, 10, 27)
+        task = self.store.create_task("Thao tác từ lịch", datetime.combine(day, time(17)))
+        self.view.anchor = self.view.selected_date = day
+        self.view.refresh()
+
+        def descendants(widget):
+            for child in widget.winfo_children():
+                yield child
+                yield from descendants(child)
+
+        card = self.view.task_cards.cards_by_id[task.id]
+        next(button for button in descendants(card)
+             if isinstance(button, ttk.Button) and button.cget("text") == "Bắt đầu").invoke()
+        self.assertEqual(self.store.get_task(task.id).status, "in_progress")
+        card = self.view.task_cards.cards_by_id[task.id]
+        next(button for button in descendants(card)
+             if isinstance(button, ttk.Button) and button.cget("text") == "Hoàn thành").invoke()
+        self.assertEqual(self.store.get_task(task.id).status, "completed")
+        self.assertEqual(self.view.day_notebook.tab(self.view.tasks_tab, "text"), "Công việc (1)")
+        self.assertEqual(len(self.store.list_tasks()), 1)
+
+    def test_populated_six_week_month_keeps_day_cards_inside_page(self):
+        # This is the actual content area left by the 1120 × 720 app shell.
+        self.root.tk.call("tk", "scaling", 96 / 72)
+        configure_style(self.root)
+        self.view.destroy()
+        self.view = CalendarView(self.root, self.store)
+        self.view.pack(fill="both", expand=True)
+        self.root.geometry("880x690")
+        for day in range(1, 32):
+            self.store.create_task("Việc trong tháng", datetime(2026, 8, day, 17))
+            self.make_schedule(start_date=date(2026, 8, day), recurrence="once")
+        self.view.anchor = self.view.selected_date = date(2026, 8, 1)
+        self.view.mode.set("month")
+        self.view.refresh()
+        self.root.update()
+        canvas = self.view.task_cards.canvas
+        self.assertGreater(canvas.winfo_height(), 100)
+        self.assertLessEqual(canvas.winfo_rooty() + canvas.winfo_height(),
+                             self.view.winfo_rooty() + self.view.winfo_height())
+        for button in self.view.calendar_frame.winfo_children():
+            if isinstance(button, ttk.Button):
+                self.assertGreaterEqual(button.winfo_width(), button.winfo_reqwidth())
+        self.root.geometry("1250x950")
+
+    def test_new_task_from_empty_day_uses_selected_deadline(self):
+        day = date(2026, 11, 27)
+        self.view.show_day(day)
+        self.view.add_task()
+        editor = next(child for child in self.root.winfo_children()
+                      if isinstance(child, tk.Toplevel))
+        self.assertEqual(editor.date_entry.get_date(), day)
+        self.assertEqual(editor.snapshot(), editor._initial)
+        editor.destroy()
+
+    def test_switching_days_starts_at_top_of_task_list(self):
+        first, second = date(2026, 10, 27), date(2026, 10, 28)
+        for day in (first, second):
+            for index in range(12):
+                self.store.create_task(f"Việc {index}", datetime.combine(day, time(17)))
+        self.view.anchor = self.view.selected_date = first
+        self.view.mode.set("month")
+        self.view.refresh()
+        self.root.update()
+        canvas = self.view.task_cards.canvas
+        canvas.yview_moveto(1)
+        self.root.update()
+        self.assertGreater(canvas.yview()[0], 0)
+        self.view.refresh()
+        self.root.update()
+        self.assertGreater(canvas.yview()[0], 0)
+        self.view.show_day(second)
+        self.root.update()
+        self.assertEqual(canvas.yview()[0], 0)
 
     def test_occurrence_completion_reopen_and_pause_preserve_history(self):
         schedule = self.make_schedule()

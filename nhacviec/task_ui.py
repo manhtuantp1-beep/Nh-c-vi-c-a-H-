@@ -7,11 +7,158 @@ from tkinter import messagebox, ttk
 
 from .dialogs import STATUS_LABELS
 from .models import Task
-from .theme import BG, BORDER, INK, MUTED, PRIMARY
+from .theme import BG
 from .widgets import DateEntry
 
 ALL_FILTER = "Tất cả việc chưa hoàn thành"
 TODO_FILTER = "Chưa bắt đầu"
+
+
+class TaskCards(ttk.Frame):
+    """The same scrollable task cards and actions in task pages and calendars.
+
+    ``empty_action`` is an optional (caption, callback) pair. The host owns task
+    filtering and refreshes after mutations; this widget only renders that list.
+    """
+
+    def __init__(self, parent, app, *, empty_title="Chưa có công việc ở đây",
+                 empty_message="Tạo công việc mới để bắt đầu.", empty_action=None):
+        super().__init__(parent)
+        self.app = app
+        self.empty_title = empty_title
+        self.empty_message = empty_message
+        self.empty_action = empty_action
+        self.visible_tasks: list[Task] = []
+        self.cards_by_id = {}
+        self._resize_job = None
+        self.canvas = tk.Canvas(self, background=BG, highlightthickness=0, borderwidth=0)
+        scroll = ttk.Scrollbar(self, orient="vertical", command=self.canvas.yview)
+        self.canvas.configure(yscrollcommand=scroll.set)
+        scroll.pack(side="right", fill="y", padx=(7, 0))
+        self.canvas.pack(side="left", fill="both", expand=True)
+        self.card_container = ttk.Frame(self.canvas)
+        self.card_container.columnconfigure(0, weight=1)
+        self._canvas_window = self.canvas.create_window((0, 0), window=self.card_container, anchor="nw")
+        self.card_container.bind("<Configure>", lambda _e: self.canvas.configure(scrollregion=self.canvas.bbox("all")))
+        self.canvas.bind("<Configure>", self._resize)
+        self.canvas.bind("<MouseWheel>", self._wheel)
+        self.canvas.bind("<Button-4>", lambda _e: self.canvas.yview_scroll(-3, "units"))
+        self.canvas.bind("<Button-5>", lambda _e: self.canvas.yview_scroll(3, "units"))
+
+    def set_tasks(self, tasks):
+        self.visible_tasks = list(tasks)
+        self._render_cards()
+
+    def _wheel(self, event):
+        self.canvas.yview_scroll(-int(event.delta / 120) if abs(event.delta) >= 120 else (-1 if event.delta > 0 else 1), "units")
+        return "break"
+
+    def _bind_card_wheel(self, widget):
+        widget.bind("<MouseWheel>", self._wheel)
+        widget.bind("<Button-4>", lambda _e: self.canvas.yview_scroll(-3, "units"))
+        widget.bind("<Button-5>", lambda _e: self.canvas.yview_scroll(3, "units"))
+        for child in widget.winfo_children():
+            self._bind_card_wheel(child)
+
+    def _resize(self, event):
+        self.canvas.itemconfigure(self._canvas_window, width=event.width)
+        self._queue_wraps()
+
+    def _queue_wraps(self, _event=None):
+        if self._resize_job is None:
+            self._resize_job = self.after_idle(self._update_wraps)
+
+    def destroy(self):
+        if self._resize_job is not None:
+            try:
+                self.after_cancel(self._resize_job)
+            except tk.TclError:
+                pass
+            self._resize_job = None
+        super().destroy()
+
+    def _update_wraps(self):
+        self._resize_job = None
+        for card in self.cards_by_id.values():
+            self._fit_card(card)
+
+    def _fit_card(self, card, _event=None):
+        if not card.winfo_exists():
+            return
+        # A Configure event precedes grid's child layout. Derive the available
+        # column from the new card width and the controls' natural widths so
+        # resizing cannot keep a stale wrap length from the previous window.
+        right_column = [child for child in card.grid_slaves(column=1)
+                        if int(child.grid_info()["column"]) == 1 and int(child.grid_info().get("columnspan", 1)) == 1]
+        right_width = max((child.winfo_reqwidth() for child in right_column), default=260)
+        width = max(160, card.winfo_width() - 34 - right_width - 18)
+        for label in getattr(card, "wrapping_labels", []):
+            target_width = max(160, card.winfo_width() - 36) if getattr(label, "_full_card_width", False) else width
+            if int(label.cget("wraplength")) != target_width:
+                label.configure(wraplength=target_width)
+
+    def _render_cards(self):
+        for child in self.card_container.winfo_children():
+            child.destroy()
+        self.cards_by_id.clear()
+        if not self.visible_tasks:
+            empty = ttk.Frame(self.card_container, style="Card.TFrame", padding=(28, 35))
+            empty.grid(row=0, column=0, sticky="ew")
+            ttk.Label(empty, text=self.empty_title, style="CardTitle.TLabel").pack(anchor="center")
+            ttk.Label(empty, text=self.empty_message, style="CardMeta.TLabel").pack(pady=(8, 16))
+            if self.empty_action:
+                caption, callback = self.empty_action
+                ttk.Button(empty, text=caption, command=callback).pack()
+            self._bind_card_wheel(empty)
+            return
+        for index, task in enumerate(self.visible_tasks):
+            card = ttk.Frame(self.card_container, style="Card.TFrame", padding=(16, 12))
+            card.grid(row=index, column=0, sticky="ew", pady=(0, 9))
+            card.columnconfigure(0, weight=1)
+            self.cards_by_id[task.id] = card
+            title = task.title if len(task.title) <= 105 else task.title[:102] + "…"
+            title_label = ttk.Label(card, text=title, style="CardTitle.TLabel", wraplength=520)
+            title_label.grid(row=0, column=0, sticky="w", padx=(0, 15))
+            pill = {"todo": "Todo", "in_progress": "Progress", "completed": "Done", "canceled": "Canceled"}[task.status]
+            ttk.Label(card, text=STATUS_LABELS[task.status], style=f"{pill}.Pill.TLabel").grid(row=0, column=1, sticky="e")
+            category = task.category or "Chưa phân loại"
+            metadata = ttk.Label(card, text=f"{category}   ·   {task.code}", style="CardMeta.TLabel", wraplength=520)
+            metadata.grid(row=1, column=0, sticky="w", pady=(5, 8), padx=(0, 15))
+            late = task.status in ("todo", "in_progress") and task.deadline < datetime.now()
+            when = task.deadline.strftime("%d/%m/%Y · %H:%M")
+            ttk.Label(card, text=("Quá hạn · " if late else "Hạn: ") + when,
+                      style="Late.TLabel" if late else "CardMeta.TLabel").grid(row=1, column=1, sticky="e", pady=(5, 8))
+            content = task.reason or task.content.replace("\n", " ") or "Chưa có nội dung chi tiết."
+            if len(content) > 80:
+                content = content[:77] + "…"
+            content_label = ttk.Label(card, text=content, style="CardBody.TLabel", wraplength=700)
+            content_label._full_card_width = True
+            content_label.grid(row=2, column=0, columnspan=2, sticky="w", pady=(2, 0))
+            wrapping_labels = [title_label, metadata, content_label]
+            note = " ".join(getattr(task, "notes", "").split())
+            if note:
+                preview = note if len(note) <= 160 else note[:157] + "…"
+                note_label = ttk.Label(card, text=f"Ghi chú: {preview}",
+                                       style="CardBody.TLabel", wraplength=700)
+                note_label._full_card_width = True
+                note_label.grid(row=3, column=0, columnspan=2, sticky="w", pady=(8, 0))
+                wrapping_labels.append(note_label)
+            actions = ttk.Frame(card, style="Surface.TFrame")
+            actions.grid(row=4, column=0, columnspan=2, sticky="e", pady=(12, 0))
+            ttk.Button(actions, text="Chi tiết", style="Compact.TButton", command=lambda t=task: self.app.edit_task(t.id)).pack(side="left", padx=(0, 5))
+            ttk.Button(actions, text="Ghi chú", style="Compact.TButton", command=lambda t=task: self.app.edit_task_notes(t.id)).pack(side="left", padx=(0, 5))
+            if task.status == "todo":
+                ttk.Button(actions, text="Bắt đầu", style="Compact.TButton", command=lambda t=task: self.app.transition_task(t.id, "in_progress")).pack(side="left", padx=(0, 5))
+            if task.status in ("todo", "in_progress"):
+                ttk.Button(actions, text="Hoàn thành", style="Compact.TButton", command=lambda t=task: self.app.transition_task(t.id, "completed")).pack(side="left")
+            else:
+                ttk.Button(actions, text="Mở lại", style="Compact.TButton", command=lambda t=task: self.app.transition_task(t.id, "todo", "Đã mở lại")).pack(side="left")
+            card.wrapping_labels = wrapping_labels
+            card.bind("<Configure>", lambda event, c=card: self._fit_card(c, event))
+            title_label.configure(cursor="hand2")
+            title_label.bind("<Button-1>", lambda _e, t=task: self.app.edit_task(t.id))
+            self._bind_card_wheel(card)
+        self._queue_wraps()
 
 
 class TaskListPage(ttk.Frame):
@@ -21,9 +168,6 @@ class TaskListPage(ttk.Frame):
         super().__init__(parent, padding=(26, 23))
         self.app, self.view = app, view
         self.visible_tasks: list[Task] = []
-        self.cards_by_id = {}
-        self._columns = 1
-        self._resize_job = None
         self._advanced_open = False
         heading = {"active": "Việc cần làm", "in_progress": "Đang thực hiện", "due": "Sắp đến hạn",
                    "completed": "Đã hoàn thành", "canceled": "Đã hủy"}[view]
@@ -111,21 +255,15 @@ class TaskListPage(ttk.Frame):
         self.list_note.pack(side="right")
         self.hint = ttk.Label(self, style="Subtitle.TLabel", wraplength=800)
         self.hint.pack(anchor="w", pady=(0, 10))
-        body = ttk.Frame(self)
-        body.pack(fill="both", expand=True)
-        self.canvas = tk.Canvas(body, background=BG, highlightthickness=0, borderwidth=0)
-        scroll = ttk.Scrollbar(body, orient="vertical", command=self.canvas.yview)
-        self.canvas.configure(yscrollcommand=scroll.set)
-        scroll.pack(side="right", fill="y", padx=(7, 0))
-        self.canvas.pack(side="left", fill="both", expand=True)
-        self.card_container = ttk.Frame(self.canvas)
-        self.card_container.columnconfigure(0, weight=1)
-        self._canvas_window = self.canvas.create_window((0, 0), window=self.card_container, anchor="nw")
-        self.card_container.bind("<Configure>", lambda _e: self.canvas.configure(scrollregion=self.canvas.bbox("all")))
-        self.canvas.bind("<Configure>", self._resize)
-        self.canvas.bind("<MouseWheel>", self._wheel)
-        self.canvas.bind("<Button-4>", lambda _e: self.canvas.yview_scroll(-3, "units"))
-        self.canvas.bind("<Button-5>", lambda _e: self.canvas.yview_scroll(3, "units"))
+        self.cards = TaskCards(
+            self, app,
+            empty_message="Thử xóa bộ lọc hoặc tạo công việc mới để bắt đầu.",
+            empty_action=("Xóa bộ lọc", self.clear_filters),
+        )
+        self.cards.pack(fill="both", expand=True)
+        self.canvas = self.cards.canvas
+        self.card_container = self.cards.card_container
+        self.canvas.bind("<Configure>", lambda event: self.hint.configure(wraplength=max(400, event.width)), add="+")
         self.refresh()
 
     def toggle_advanced(self):
@@ -172,54 +310,9 @@ class TaskListPage(ttk.Frame):
         caption = "Thu gọn −" if self._advanced_open else f"Bộ lọc ({count})" if count else "Bộ lọc +"
         self.advanced_button.configure(text=caption)
 
-    def _wheel(self, event):
-        self.canvas.yview_scroll(-int(event.delta / 120) if abs(event.delta) >= 120 else (-1 if event.delta > 0 else 1), "units")
-        return "break"
-
-    def _bind_card_wheel(self, widget):
-        widget.bind("<MouseWheel>", self._wheel)
-        widget.bind("<Button-4>", lambda _e: self.canvas.yview_scroll(-3, "units"))
-        widget.bind("<Button-5>", lambda _e: self.canvas.yview_scroll(3, "units"))
-        for child in widget.winfo_children():
-            self._bind_card_wheel(child)
-
-    def _resize(self, event):
-        self.canvas.itemconfigure(self._canvas_window, width=event.width)
-        self.hint.configure(wraplength=max(400, event.width))
-        self._queue_wraps()
-
-    def _queue_wraps(self, _event=None):
-        if self._resize_job is None:
-            self._resize_job = self.after_idle(self._update_wraps)
-
-    def destroy(self):
-        if self._resize_job is not None:
-            try:
-                self.after_cancel(self._resize_job)
-            except tk.TclError:
-                pass
-            self._resize_job = None
-        super().destroy()
-
-    def _update_wraps(self):
-        self._resize_job = None
-        for card in self.cards_by_id.values():
-            self._fit_card(card)
-
-    def _fit_card(self, card, _event=None):
-        if not card.winfo_exists():
-            return
-        # A Configure event precedes grid's child layout. Derive the available
-        # column from the new card width and the controls' natural widths so
-        # resizing cannot keep a stale wrap length from the previous window.
-        right_column = [child for child in card.grid_slaves(column=1)
-                        if int(child.grid_info()["column"]) == 1 and int(child.grid_info().get("columnspan", 1)) == 1]
-        right_width = max((child.winfo_reqwidth() for child in right_column), default=260)
-        width = max(160, card.winfo_width() - 34 - right_width - 18)
-        for label in getattr(card, "wrapping_labels", []):
-            target_width = max(160, card.winfo_width() - 36) if getattr(label, "_full_card_width", False) else width
-            if int(label.cget("wraplength")) != target_width:
-                label.configure(wraplength=target_width)
+    @property
+    def cards_by_id(self):
+        return self.cards.cards_by_id
 
     def apply_filters(self):
         try:
@@ -263,54 +356,4 @@ class TaskListPage(ttk.Frame):
         else:
             text = "Chọn Chi tiết để xem nội dung và cập nhật công việc."
         self.hint.configure(text=text)
-        self._render_cards()
-
-    def _render_cards(self):
-        for child in self.card_container.winfo_children():
-            child.destroy()
-        self.cards_by_id = {}
-        if not self.visible_tasks:
-            empty = ttk.Frame(self.card_container, style="Card.TFrame", padding=(28, 35))
-            empty.grid(row=0, column=0, sticky="ew")
-            ttk.Label(empty, text="Chưa có công việc ở đây", style="CardTitle.TLabel").pack(anchor="center")
-            ttk.Label(empty, text="Thử xóa bộ lọc hoặc tạo công việc mới để bắt đầu.", style="CardMeta.TLabel").pack(pady=(8, 16))
-            ttk.Button(empty, text="Xóa bộ lọc", command=self.clear_filters).pack()
-            return
-        for index, task in enumerate(self.visible_tasks):
-            card = ttk.Frame(self.card_container, style="Card.TFrame", padding=(16, 12))
-            card.grid(row=index, column=0, sticky="ew", pady=(0, 9))
-            card.columnconfigure(0, weight=1)
-            self.cards_by_id[task.id] = card
-            title = task.title if len(task.title) <= 105 else task.title[:102] + "…"
-            title_label = ttk.Label(card, text=title, style="CardTitle.TLabel", wraplength=520)
-            title_label.grid(row=0, column=0, sticky="w", padx=(0, 15))
-            pill = {"todo": "Todo", "in_progress": "Progress", "completed": "Done", "canceled": "Canceled"}[task.status]
-            ttk.Label(card, text=STATUS_LABELS[task.status], style=f"{pill}.Pill.TLabel").grid(row=0, column=1, sticky="e")
-            category = task.category or "Chưa phân loại"
-            metadata = ttk.Label(card, text=f"{category}   ·   {task.code}", style="CardMeta.TLabel", wraplength=520)
-            metadata.grid(row=1, column=0, sticky="w", pady=(5, 8), padx=(0, 15))
-            late = task.status in ("todo", "in_progress") and task.deadline < datetime.now()
-            when = task.deadline.strftime("%d/%m/%Y · %H:%M")
-            ttk.Label(card, text=("Quá hạn · " if late else "Hạn: ") + when,
-                      style="Late.TLabel" if late else "CardMeta.TLabel").grid(row=1, column=1, sticky="e", pady=(5, 8))
-            content = task.reason or task.content.replace("\n", " ") or "Chưa có nội dung chi tiết."
-            if len(content) > 80:
-                content = content[:77] + "…"
-            content_label = ttk.Label(card, text=content, style="CardBody.TLabel", wraplength=700)
-            content_label._full_card_width = True
-            content_label.grid(row=2, column=0, columnspan=2, sticky="w", pady=(2, 0))
-            actions = ttk.Frame(card, style="Surface.TFrame")
-            actions.grid(row=3, column=0, columnspan=2, sticky="e", pady=(12, 0))
-            ttk.Button(actions, text="Chi tiết", style="Compact.TButton", command=lambda t=task: self.app.edit_task(t.id)).pack(side="left", padx=(0, 5))
-            if task.status == "todo":
-                ttk.Button(actions, text="Bắt đầu", style="Compact.TButton", command=lambda t=task: self.app.transition_task(t.id, "in_progress")).pack(side="left", padx=(0, 5))
-            if task.status in ("todo", "in_progress"):
-                ttk.Button(actions, text="Hoàn thành", style="Compact.TButton", command=lambda t=task: self.app.transition_task(t.id, "completed")).pack(side="left")
-            else:
-                ttk.Button(actions, text="Mở lại", style="Compact.TButton", command=lambda t=task: self.app.transition_task(t.id, "todo", "Đã mở lại")).pack(side="left")
-            card.wrapping_labels = [title_label, metadata, content_label]
-            card.bind("<Configure>", lambda event, c=card: self._fit_card(c, event))
-            title_label.configure(cursor="hand2")
-            title_label.bind("<Button-1>", lambda _e, t=task: self.app.edit_task(t.id))
-            self._bind_card_wheel(card)
-        self._queue_wraps()
+        self.cards.set_tasks(self.visible_tasks)

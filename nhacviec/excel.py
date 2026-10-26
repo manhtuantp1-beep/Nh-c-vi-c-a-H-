@@ -13,7 +13,7 @@ from .storage import Storage
 
 HEADERS = ["Loại dữ liệu", "Mã công việc", "Tên công việc", "Phân loại", "Trạng thái", "Deadline",
            "Ngày tạo", "Ngày hoàn thành", "Nội dung", "Yêu cầu", "Ngày", "Thứ", "Giờ", "Giờ kết thúc",
-           "Kiểu lặp", "Nguồn buổi", "Nhắc trước (phút)", "Nhắc trước (ngày)", "Tháng deadline", "Năm deadline", "Ngày xuất"]
+           "Kiểu lặp", "Nguồn buổi", "Nhắc trước (phút)", "Nhắc trước (ngày)", "Tháng deadline", "Năm deadline", "Ngày xuất", "Ghi chú công việc"]
 TASK_LABELS = {"todo": "Cần làm", "in_progress": "Đang thực hiện", "completed": "Hoàn thành", "canceled": "Đã hủy"}
 SESSION_LABELS = {"pending": "Chưa xác nhận", "completed": "Hoàn thành", "skipped": "Bỏ qua"}
 RECURRENCE_LABELS = {"once": "Một lần", "weekly": "Hằng tuần", "monthly": "Hằng tháng", "yearly": "Hằng năm"}
@@ -65,7 +65,7 @@ def export_workbook(storage: Storage, path: str | Path, start_date: date, end_da
         _append(report, ["Công việc", task.code, task.title, task.category, TASK_LABELS[task.status], task.deadline,
             task.created_at, task.completed_at, task.content, task.requirements, task.deadline.date(),
             WEEKDAYS[task.deadline.weekday()], task.deadline.time(), None, "", "Đã lưu", None, "",
-            task.deadline.month, task.deadline.year, exported_at])
+            task.deadline.month, task.deadline.year, exported_at, task.notes])
     schedules = {s.id: s for s in storage.list_schedules()}
     recorded = {(r["schedule_id"], r["on_date"]) for r in storage.connection.execute("SELECT schedule_id,on_date FROM occurrence_overrides")}
     for occurrence in occurrences:
@@ -74,7 +74,7 @@ def export_workbook(storage: Storage, path: str | Path, start_date: date, end_da
             occurrence.start, None, None, occurrence.content, "", occurrence.start.date(), WEEKDAYS[occurrence.start.weekday()],
             occurrence.start.time(), occurrence.end.time(), RECURRENCE_LABELS[schedule.recurrence],
             "Đã lưu" if (schedule.id, occurrence.start.date().isoformat()) in recorded else "Dự kiến",
-            schedule.reminder_minutes, ", ".join(map(str, schedule.reminder_days)), occurrence.start.month, occurrence.start.year, exported_at])
+            schedule.reminder_minutes, ", ".join(map(str, schedule.reminder_days)), occurrence.start.month, occurrence.start.year, exported_at, ""])
     _style(report, "DuLieuCongViec")
     definitions = workbook.create_sheet("Lịch gốc")
     definitions.append(["Mã lịch", "Tên lịch", "Phân loại", "Kiểu lặp", "Áp dụng từ", "Kết thúc lặp", "Các thứ",

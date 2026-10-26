@@ -4,6 +4,7 @@ from __future__ import annotations
 import calendar
 from datetime import date, datetime
 import logging
+import sqlite3
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 from tkinter.scrolledtext import ScrolledText
@@ -148,11 +149,17 @@ class TaskDialog(tk.Toplevel):
         _label(frame, "Yêu cầu hoàn thành", row=7, top=18)
         self.requirements_text = _text_area(frame, height=3)
         self.requirements_text.grid(row=8, column=0, sticky="ew")
+        _label(frame, "Ghi chú", row=9, top=18)
+        self.notes_text = _text_area(frame, height=4)
+        self.notes_text.grid(row=10, column=0, sticky="ew")
+        ttk.Label(frame, text="Lưu tiến độ đang làm, nội dung cần trao đổi hoặc điều cần chú ý.",
+                  style="Hint.TLabel", wraplength=600).grid(row=11, column=0, sticky="w", pady=(7, 0))
         ttk.Label(frame, text="* Thông tin bắt buộc. Nhấn Ctrl+S để lưu nhanh.",
-                  style="Hint.TLabel").grid(row=9, column=0, sticky="w", pady=(14, 0))
+                  style="Hint.TLabel").grid(row=12, column=0, sticky="w", pady=(14, 0))
         if task:
             self.content_text.insert("1.0", task.content)
             self.requirements_text.insert("1.0", task.requirements)
+            self.notes_text.insert("1.0", task.notes)
 
         buttons = _footer(self)
         if task and task.status == "in_progress":
@@ -174,7 +181,8 @@ class TaskDialog(tk.Toplevel):
 
     def snapshot(self):
         return (self.title_var.get(), self.category_var.get(), self.time_var.get(),
-                self.date_entry.get(), self.content_text.get("1.0", "end-1c"), self.requirements_text.get("1.0", "end-1c"))
+                self.date_entry.get(), self.content_text.get("1.0", "end-1c"),
+                self.requirements_text.get("1.0", "end-1c"), self.notes_text.get("1.0", "end-1c"))
 
     def cancel(self):
         if self.snapshot() != self._initial and not messagebox.askyesno("Chưa lưu thay đổi", "Đóng biểu mẫu và bỏ những thay đổi chưa lưu?", parent=self):
@@ -188,12 +196,13 @@ class TaskDialog(tk.Toplevel):
                 raise ValueError("Anh cần chọn ngày deadline.")
             fields = dict(title=self.title_var.get(), deadline=datetime.combine(when, parse_time(self.time_var.get())),
                           category=self.category_var.get(), content=self.content_text.get("1.0", "end-1c"),
-                          requirements=self.requirements_text.get("1.0", "end-1c"))
+                          requirements=self.requirements_text.get("1.0", "end-1c"),
+                          notes=self.notes_text.get("1.0", "end-1c"))
             if self.task:
                 self.app.store.update_task(self.task.id, **fields)
             else:
                 self.app.store.create_task(**fields)
-        except (ValueError, OSError) as exc:
+        except (ValueError, OSError, sqlite3.Error) as exc:
             messagebox.showerror("Chưa lưu được công việc", str(exc), parent=self)
             return
         self.destroy()
@@ -207,6 +216,55 @@ class TaskDialog(tk.Toplevel):
             return
         self.app.transition_task(self.task.id, status, reason)
         self.destroy()
+
+
+class NotesDialog(tk.Toplevel):
+    """Edit progress notes without changing any other task field."""
+
+    def __init__(self, app, task: Task):
+        super().__init__(app.root)
+        self.app, self.task = app, task
+        _prepare_dialog(self, app, "Ghi chú công việc", width=720, height=570,
+                        min_width=560, min_height=420)
+        _header(self, "Ghi chú công việc", f"{task.title}\n{task.code}  ·  {STATUS_LABELS[task.status]}")
+        self.protocol("WM_DELETE_WINDOW", self.cancel)
+        frame = ttk.Frame(self, style="Surface.TFrame", padding=(28, 0, 28, 12))
+        frame.grid(row=1, column=0, sticky="nsew")
+        frame.columnconfigure(0, weight=1)
+        frame.rowconfigure(1, weight=1)
+        hint = ttk.Label(frame, text="Ghi lại tiến độ đang làm và những nội dung cần chú ý.",
+                         style="Hint.TLabel", wraplength=620)
+        hint.grid(row=0, column=0, sticky="ew", pady=(0, 10))
+        frame.bind("<Configure>", lambda event: hint.configure(wraplength=max(240, event.width - 56)))
+        self.notes_text = _text_area(frame, height=10)
+        self.notes_text.grid(row=1, column=0, sticky="nsew")
+        self.notes_text.insert("1.0", task.notes)
+        self._initial = self.snapshot()
+        buttons = _footer(self)
+        ttk.Button(buttons, text="Lưu ghi chú", style="Accent.TButton", command=self.save).pack(side="right")
+        ttk.Button(buttons, text="Đóng", style="Secondary.TButton", command=self.cancel).pack(side="right", padx=(0, 10))
+        self.bind("<Control-s>", lambda _e: self.save())
+        self.bind("<Escape>", lambda _e: self.cancel())
+        self.notes_text.focus_set()
+        self.grab_set()
+
+    def snapshot(self):
+        return self.notes_text.get("1.0", "end-1c")
+
+    def cancel(self):
+        if self.snapshot() != self._initial and not messagebox.askyesno(
+                "Chưa lưu ghi chú", "Đóng và bỏ những ghi chú chưa lưu?", parent=self):
+            return
+        self.destroy()
+
+    def save(self):
+        try:
+            self.app.store.update_task(self.task.id, notes=self.snapshot())
+        except (ValueError, OSError, sqlite3.Error) as exc:
+            messagebox.showerror("Chưa lưu được ghi chú", str(exc), parent=self)
+            return
+        self.destroy()
+        self.app.refresh_current()
 
 
 class SettingsDialog(tk.Toplevel):

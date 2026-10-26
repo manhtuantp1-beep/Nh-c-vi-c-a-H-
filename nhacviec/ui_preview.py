@@ -56,6 +56,8 @@ def seed_demo(store: Storage, today: date) -> int:
                                  requirements="Thông tin đầy đủ, rõ ràng và được xác nhận trước hạn.")
         if status != "todo":
             store.set_task_status(task.id, status)
+        if offset in (-1, 0):
+            store.update_task(task.id, notes="Đã đối chiếu số liệu đợt 1.\nCần xác nhận nội dung còn thiếu trước khi bàn giao.")
         if selected_id is None:
             selected_id = task.id
     first = date(today.year, 1, 1)
@@ -434,13 +436,29 @@ def capture_phase(store, data_dir, output, report, today, task_id, *, target_dpi
                 view.mode.set(mode)
                 view.refresh()
                 settle(root)
-                if view.tree.winfo_height() <= round(100 * viewport_factor):
-                    raise AssertionError(f"{context} {mode}: calendar day tree height must exceed 100px")
-                require_visible(view.tree, root, f"{context} {mode}: day list")
-                for button in view.action_buttons:
-                    require_visible(button, root, f"{context} {mode}: day action", natural_width=True)
-                report["checks"].append(f"{context} {mode}: day list and actions fit")
+                day_tasks = store.list_tasks(date_from=today, date_to=today)
+                if [task.id for task in view.task_cards.visible_tasks] != [task.id for task in day_tasks]:
+                    raise AssertionError(f"{context} {mode}: calendar tasks do not match deadline date")
+                if view.task_cards.canvas.winfo_height() <= round(100 * viewport_factor):
+                    raise AssertionError(f"{context} {mode}: calendar task list height must exceed 100px")
+                require_visible(view.task_cards.canvas, root, f"{context} {mode}: deadline task list")
+                for card in view.task_cards.cards_by_id.values():
+                    for control in descendants(card):
+                        if isinstance(control, ttk.Button):
+                            require_visible(control, card, f"{context} {mode}: task action {control.cget('text')}", natural_width=True)
+                report["checks"].append(f"{context} {mode}: deadline totals match task cards and actions fit")
                 capture(root, output / f"calendar-{mode}-{context}.png", report["screenshots"])
+                if mode == "month" and logical_width == 1366 and not suffix:
+                    capture(root, output / "calendar-tasks-1366x768.png", report["screenshots"])
+                if mode == "month":
+                    view.day_notebook.select(view.schedules_tab)
+                    settle(root)
+                    require_visible(view.tree, root, f"{context}: schedule list")
+                    for button in view.action_buttons:
+                        require_visible(button, root, f"{context}: schedule action", natural_width=True)
+                    report["checks"].append(f"{context}: existing schedule list and actions fit")
+                    capture(root, output / f"calendar-schedules-{context}.png", report["screenshots"])
+                    view.day_notebook.select(view.tasks_tab)
             app.show_page("active")
             dialog = app.edit_task(task_id)
             try:
@@ -453,6 +471,18 @@ def capture_phase(store, data_dir, output, report, today, task_id, *, target_dpi
                 capture(dialog, output / name, report["screenshots"])
             finally:
                 dialog.destroy()
+            notes = app.edit_task_notes(task_id)
+            try:
+                settle(notes)
+                require_visible(notes.notes_text, notes, f"{context}: notes editor")
+                save_notes = next(w for w in descendants(notes)
+                                  if isinstance(w, ttk.Button) and w.cget("text") == "Lưu ghi chú")
+                require_visible(save_notes, notes, f"{context}: notes save footer", natural_width=True)
+                report["checks"].append(f"{context}: notes editor and save footer visible")
+                name = "notes-dialog.png" if logical_width == 1366 and not suffix else f"notes-dialog-{context}.png"
+                capture(notes, output / name, report["screenshots"])
+            finally:
+                notes.destroy()
             if errors:
                 raise AssertionError("Tk callback errors: " + "; ".join(errors))
     finally:
