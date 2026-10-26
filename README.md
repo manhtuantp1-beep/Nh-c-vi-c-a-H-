@@ -16,19 +16,23 @@ Hướng dẫn chữ hiển thị và nâng cấp: [docs/readability.md](docs/re
 
 ## Tải và cài trên Windows
 
-**[Xem bộ cài Windows trong Releases](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases)**
+**[Tải bộ cài Nhắc việc anh Hà 2.0.2 — Windows x64](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/download/windows-2.0.2-preview.1/NhacViecAnhHa-Setup-2.0.2-x64.exe)**
 
-Mã nguồn hiện tại là **2.0.2**, dành cho Windows 10/11 x64. Bản mới đang được dựng và kiểm tra; chưa có bộ cài 2.0.2 được xác nhận trong tài liệu này. Khi phát hành, Releases sẽ kèm bộ cài, SHA256 và báo cáo của đúng bản 2.0.2. Mã nguồn: [GitHub](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-).
+Mã nguồn hiện tại là **2.0.2**, dành cho Windows 10/11 x64. Bộ cài đã được dựng và kiểm tra thành công trong [lần dựng Windows 40255800533](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/actions/runs/40255800533), rồi [phát hành tại đây](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/tag/windows-2.0.2-preview.1). Mã nguồn: [GitHub](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-).
 
-1. Khi bản 2.0.2 được phát hành, tải `NhacViecAnhHa-Setup-2.0.2-x64.exe` và `SHA256SUMS.txt` trong cùng bản phát hành.
+1. Tải bộ cài ở liên kết trên và [SHA256SUMS.txt](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/download/windows-2.0.2-preview.1/SHA256SUMS.txt) trong cùng bản phát hành.
 2. Đối chiếu SHA256, mở bộ cài và làm theo hướng dẫn. Dùng bộ cài không cần cài Python hoặc NSIS.
 3. Mở Nhắc việc anh Hà từ menu Start hoặc trang cuối của bộ cài. Dữ liệu mới nằm riêng tại `%USERPROFILE%\NhacViecAnhHaMoi\data\tasks.db`.
 
 Nếu đang dùng 2.0.0 hoặc 2.0.1, sao lưu rồi **Thoát hẳn** ứng dụng trước khi chạy bộ cài mới. Cài vào cùng vị trí sẽ dùng lại dữ liệu 2.0.x; không cần khôi phục hoặc nhập lại công việc.
 
+Kích thước bộ cài: 17.114.081 byte. SHA256: `9765523bf93c57e690d77b04d4f8d1c05f6f24cad18ca5f29f747e60071e3e99`.
+
 Bộ cài chưa ký số; Windows có thể hiển thị cảnh báo SmartScreen. Khay hệ thống, thông báo Windows và tự chạy khi đăng nhập cần được kiểm tra thêm trên máy sử dụng thực tế.
 
-Ảnh của bản 2.0.2 sẽ được bổ sung sau khi chụp và kiểm tra trên Windows. Kết quả của bản 2.0.1 được giữ trong phần lịch sử của [tài liệu kiểm thử](docs/kiem-thu.md).
+Ảnh từ EXE đóng gói trên Windows ở DPI thực của runner: [Danh sách công việc](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/download/windows-2.0.2-preview.1/tasks-1366x768.png) · [Lịch tháng](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/download/windows-2.0.2-preview.1/calendar-month-1366x768.png) · [Biểu mẫu công việc](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/download/windows-2.0.2-preview.1/task-dialog.png). Xem ảnh trong [hướng dẫn giao diện](docs/giao-dien.md).
+
+Ảnh mô phỏng tỷ lệ font/bố cục Tk: [125%](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/download/windows-2.0.2-preview.1/tasks-1366x768-tk120dpi.png) · [150%](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/download/windows-2.0.2-preview.1/tasks-1366x768-tk144dpi.png) · [200%](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/download/windows-2.0.2-preview.1/tasks-1366x768-tk192dpi.png). Đây là mô phỏng trong ứng dụng, không phải bằng chứng thay đổi Scale của Windows sang từng mức đó.
 
 ## Chạy mã nguồn
 
@@ -105,7 +109,7 @@ Trên GitHub, mở Actions → Build Windows installer → Run workflow để d�
 
 ## Phạm vi kiểm tra
 
-**2.0.2**: đạt 89 kiểm thử và 48 kiểm tra bố cục kèm 48 ảnh chụp trên Linux/Xvfb. Kiểm tra bộ cài và DPI trên Windows đang chờ thực thi. Các mức Tk tương đương 125%/150%/200% là mô phỏng cỡ chữ và bố cục, tách riêng với DPI thực của màn hình Windows. Xem [phạm vi kiểm tra](docs/kiem-thu.md) và [giải thích DPI](docs/readability.md).
+**2.0.2**: mã nguồn [897adf3](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/tree/897adf34821c12f68951ad75dc2c1ebf9a665362) đã đạt 89 kiểm thử trên Windows; EXE đóng gói đạt kiểm tra nghiệp vụ, GUI và xác nhận PerMonitorV2 của cả tiến trình lẫn cửa sổ. Cùng EXE đó đạt 48 kiểm tra bố cục/ảnh chụp; bộ cài đã qua kiểm tra cài/gỡ, GUI sau cài và giữ nguyên dữ liệu. Bộ 89 kiểm thử và 48 kiểm tra bố cục cũng đạt trên Linux/Xvfb. Các mức Tk tương đương 125%/150%/200% là mô phỏng cỡ chữ và bố cục, tách riêng với DPI thực của màn hình Windows. Xem [phạm vi kiểm tra](docs/kiem-thu.md) và [giải thích DPI](docs/readability.md).
 
 Lịch sử **2.0.1**: mã nguồn [6dc1acf](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/tree/6dc1acf1db2d04e6f9972e11d0fb5801f590496b) đã đạt 77 kiểm thử trên Windows, kiểm tra `--self-test` / `--gui-smoke-test` của EXE, 24 kiểm tra bố cục ở cỡ chữ mặc định và Tk 120 DPI, cùng kiểm tra cài/gỡ giữ nguyên dữ liệu. Xem [lần dựng 39719044251](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/actions/runs/39719044251) và [chi tiết kiểm thử](docs/kiem-thu.md).
 

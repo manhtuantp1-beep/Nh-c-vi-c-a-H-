@@ -2,7 +2,15 @@
 
 ## Bản 2.0.2 — DPI và khả năng đọc
 
-Ngày 26/10/2026: bản 2.0.2 đã đạt toàn bộ 89 kiểm thử trên Linux/Xvfb. Lệnh `python -m nhacviec --capture-ui` đạt 48 kiểm tra bố cục và tạo 48 ảnh PNG qua pha tỷ lệ mặc định cùng các pha Tk 120/144/192 DPI. Dựng EXE, kiểm tra manifest, DPI thực của cửa sổ, cài/gỡ và chụp giao diện Windows 2.0.2 đang chờ thực thi.
+Ngày 26/10/2026: bản 2.0.2 đã đạt toàn bộ 89 kiểm thử trên Linux/Xvfb. Lệnh `python -m nhacviec --capture-ui` đạt 48 kiểm tra bố cục và tạo 48 ảnh PNG qua pha tỷ lệ mặc định cùng các pha Tk 120/144/192 DPI.
+
+Trên Windows, [lần dựng 40255800533](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/actions/runs/40255800533) đã thành công với mã nguồn [897adf34821c12f68951ad75dc2c1ebf9a665362](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/tree/897adf34821c12f68951ad75dc2c1ebf9a665362). Toàn bộ 89 kiểm thử đạt; EXE đóng gói vượt qua tự kiểm tra nghiệp vụ và GUI, xác nhận cả tiến trình lẫn cửa sổ thực đang ở chế độ PerMonitorV2. Cùng EXE tạo 48 ảnh và vượt qua 48 kiểm tra bố cục ở pha DPI thực khi khởi động cùng các pha Tk 120/144/192 DPI. Báo cáo đã xuất bản xác nhận `frozen=true`, ứng dụng `NhacViecAnhHa.exe` và DPI thực của cửa sổ trên runner là 96. Kiểm tra cài/gỡ im lặng đã đạt, bao gồm tự kiểm tra nghiệp vụ, GUI và PerMonitorV2 của ứng dụng sau cài, cùng việc giữ nguyên các tệp dữ liệu đánh dấu.
+
+Ảnh được chụp từ EXE đóng gói qua Win32 PrintWindow. Với cửa sổ thử nghiệm lớn hơn màn hình runner 1920×1080, công cụ ghép các phần hiển thị thực của cùng cửa sổ theo điểm ảnh gốc, không co giãn ảnh; trường `capture_method` trong báo cáo ghi rõ phương thức này.
+
+Manifest trích từ chính EXE ứng dụng trong bộ cài đã phát hành xác nhận `dpiAware=true/pm`, `dpiAwareness=PerMonitorV2,PerMonitor` và `gdiScaling=false`. Đây là đối chiếu tệp nhị phân phát hành, bổ sung cho trạng thái DPI được đo khi EXE chạy.
+
+[Bản phát hành 2.0.2](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/tag/windows-2.0.2-preview.1) đã được xuất bản từ artifact đã kiểm chứng qua [workflow phát hành 40256024229](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/actions/runs/40256024229). Bản phát hành có 11 tệp, gồm bộ cài, SHA256, báo cáo nghiệp vụ/GUI/bố cục và các ảnh Windows. Bộ cài có kích thước 17.114.081 byte, SHA256 `9765523bf93c57e690d77b04d4f8d1c05f6f24cad18ca5f29f747e60071e3e99`. Ảnh gốc và liên kết ảnh mô phỏng được trình bày trong [hướng dẫn giao diện](giao-dien.md).
 
 Các lệnh kiểm tra Linux: bộ kiểm thử chạy trên Xvfb `:99`; ma trận ảnh chạy trên Xvfb `:104` kích thước 3840×2160 để chứa đủ cửa sổ mô phỏng 200%:
 
@@ -13,7 +21,7 @@ DISPLAY=:104 python -m nhacviec --capture-ui /tmp/nhacviec-2.0.2-ui
 
 Ma trận bố cục mới tách pha DPI thực của cửa sổ khi khởi động và các pha thay đổi tỷ lệ font/bố cục Tk tương đương 125% (120 DPI), 150% (144 DPI), 200% (192 DPI). Các pha Tk mô phỏng không đổi thiết lập hiển thị Windows và không xác nhận ứng dụng đã chạy trên màn hình vật lý ở từng tỷ lệ đó. Chuyển một cửa sổ đang mở qua các màn hình có DPI khác nhau chưa được xác nhận hỗ trợ tự đổi kích thước.
 
-Kiểm tra EXE cần xác nhận manifest khai báo PerMonitorV2 và trạng thái DPI của tiến trình/cửa sổ thật. Cỡ chữ Tk phải khớp DPI thực khi ứng dụng khởi tạo giao diện; kiểm tra mã nguồn hoặc mô phỏng API không thay thế bước xác nhận này. Chi tiết thay đổi và nâng cấp: [readability.md](readability.md).
+Các kiểm tra GUI và chụp ảnh của EXE bắt buộc tiến trình/cửa sổ thật ở chế độ PerMonitorV2; chúng ghi DPI của cửa sổ và tỷ lệ Tk vào báo cáo. Kiểm tra mã nguồn hoặc mô phỏng API được tách riêng khỏi bằng chứng chạy EXE này. Chi tiết thay đổi và nâng cấp: [readability.md](readability.md).
 
 ## Lịch sử bản 2.0.1
 
