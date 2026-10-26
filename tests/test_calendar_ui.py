@@ -216,6 +216,54 @@ class CalendarTkTests(unittest.TestCase):
         self.assertEqual(editor.snapshot(), editor._initial)
         editor.destroy()
 
+    def test_large_font_short_calendar_scrolls_without_hiding_day_tasks(self):
+        # Exercise larger text in the same physical window. This is a font
+        # metrics stress case, not a claim about changing the OS monitor DPI.
+        self.root.tk.call("tk", "scaling", 120 / 72)
+        configure_style(self.root)
+        self.view.destroy()
+        self.view = CalendarView(self.root, self.store)
+        self.view.pack(fill="both", expand=True)
+        self.root.geometry("880x650")
+        try:
+            for day in range(1, 32):
+                self.store.create_task("Việc trong tháng", datetime(2026, 8, day, 17))
+                self.make_schedule(start_date=date(2026, 8, day), recurrence="once")
+            self.view.anchor = self.view.selected_date = date(2026, 8, 1)
+            self.view.mode.set("month")
+            self.view.refresh()
+            self.root.update()
+            cards_canvas = self.view.task_cards.canvas
+            self.assertGreater(cards_canvas.winfo_height(), 100)
+            self.assertLessEqual(cards_canvas.winfo_rooty() + cards_canvas.winfo_height(),
+                                 self.view.winfo_rooty() + self.view.winfo_height())
+            self.assertTrue(self.view._calendar_scroll)
+            self.assertTrue(self.view.calendar_viewport.scrollbar.winfo_ismapped())
+            calendar_canvas = self.view.calendar_viewport.canvas
+            calendar_canvas.yview_moveto(1)
+            self.root.update()
+            self.assertGreater(calendar_canvas.yview()[0], 0)
+            self.view.show_day(date(2026, 8, 1))
+            self.root.update()
+            selected = self.view._selected_day_button
+            self.assertGreaterEqual(selected.winfo_rooty(), calendar_canvas.winfo_rooty())
+            self.assertLessEqual(selected.winfo_rooty() + selected.winfo_height(),
+                                 calendar_canvas.winfo_rooty() + calendar_canvas.winfo_height())
+            self.view.show_day(date(2026, 8, 31))
+            self.root.update()
+            selected = self.view._selected_day_button
+            self.assertGreaterEqual(selected.winfo_rooty(), calendar_canvas.winfo_rooty())
+            self.assertLessEqual(selected.winfo_rooty() + selected.winfo_height(),
+                                 calendar_canvas.winfo_rooty() + calendar_canvas.winfo_height())
+            self.assertEqual(len(self.view.task_cards.visible_tasks), 1)
+            for button in self.view.calendar_frame.winfo_children():
+                if isinstance(button, ttk.Button):
+                    self.assertGreaterEqual(button.winfo_width(), button.winfo_reqwidth())
+        finally:
+            self.root.tk.call("tk", "scaling", 96 / 72)
+            configure_style(self.root)
+            self.root.geometry("1250x950")
+
     def test_switching_days_starts_at_top_of_task_list(self):
         first, second = date(2026, 10, 27), date(2026, 10, 28)
         for day in (first, second):

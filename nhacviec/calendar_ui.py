@@ -114,6 +114,12 @@ class CalendarView(ttk.Frame):
         self._tasks_by_day = defaultdict(list)
         self._selected_occurrences = {}
         self._rendered_date = None
+        self._vertical_job = None
+        self._destroying = False
+        self._calendar_scroll = False
+        self._vertical_signature = None
+        self._selected_day_button = None
+        self._reveal_day_pending = True
         self._range = (self.anchor, self.anchor)
         self._build()
         self.refresh()
@@ -127,7 +133,7 @@ class CalendarView(ttk.Frame):
             style.configure(f"Calendar.{base}", padding=(4, 1))
         self.columnconfigure(0, weight=1)
         self.rowconfigure(4, weight=1, minsize=_pixels(self, 210))
-        toolbar = ttk.Frame(self)
+        toolbar = self._toolbar = ttk.Frame(self)
         toolbar.grid(row=0, column=0, sticky="ew", pady=(0, 16))
         ttk.Label(toolbar, text="Lịch làm việc", style="Title.TLabel").pack(side="left")
         ttk.Button(toolbar, text="Thêm lịch", style="Accent.TButton",
@@ -135,7 +141,7 @@ class CalendarView(ttk.Frame):
         ttk.Button(toolbar, text="Quản lý lịch", style="Secondary.TButton",
                    command=self.manage_schedules).pack(side="right")
 
-        modebar = ttk.Frame(self)
+        modebar = self._modebar = ttk.Frame(self)
         modebar.grid(row=1, column=0, sticky="ew", pady=(0, 10))
         modes = ttk.Frame(modebar, style="Surface.TFrame", padding=3)
         modes.pack(side="left")
@@ -154,15 +160,20 @@ class CalendarView(ttk.Frame):
 
         self.summary = ttk.Label(self, text="", style="Subtitle.TLabel", wraplength=_pixels(self, 820))
         self.summary.grid(row=2, column=0, sticky="w", pady=(0, 12))
-        self.bind("<Configure>", lambda event: self.summary.configure(wraplength=max(_pixels(self, 300), event.width - 48)))
-        self.calendar_frame = ttk.Frame(self)
-        self.calendar_frame.grid(row=3, column=0, sticky="ew", pady=(0, 14))
+        self.bind("<Configure>", self._configured)
+        self.calendar_viewport = ScrollableForm(self)
+        self.calendar_viewport.grid(row=3, column=0, sticky="ew", pady=(0, 14))
+        self.calendar_viewport.canvas.configure(height=1)
+        self.calendar_viewport.canvas.bind("<Configure>", self._viewport_changed, add="+")
+        self.calendar_frame = self.calendar_viewport.content
+        self.calendar_frame.configure(padding=0)
+        self.calendar_frame.bind("<Configure>", self._queue_vertical_fit, add="+")
 
-        daybox = ttk.Frame(self, style="Surface.TFrame", padding=(16, 12))
+        daybox = self._daybox = ttk.Frame(self, style="Surface.TFrame", padding=(16, 12))
         daybox.grid(row=4, column=0, sticky="nsew")
         daybox.columnconfigure(0, weight=1)
         daybox.rowconfigure(1, weight=1, minsize=_pixels(self, 110))
-        day_header = ttk.Frame(daybox, style="Surface.TFrame")
+        day_header = self._day_header = ttk.Frame(daybox, style="Surface.TFrame")
         day_header.grid(row=0, column=0, columnspan=2, sticky="ew", pady=(0, 10))
         self.day_label = ttk.Label(day_header, text="", style="Surface.TLabel", font=ui_font(self, 12, "bold"))
         self.day_label.pack(side="left")
@@ -212,6 +223,95 @@ class CalendarView(ttk.Frame):
             button = ttk.Button(actions, text=label, width=0, style="Compact.TButton", command=callback)
             button.pack(side="left", padx=(0, 6))
             self.action_buttons.append(button)
+
+    def _configured(self, event):
+        self.summary.configure(wraplength=max(_pixels(self, 300), event.width - 48))
+        self._reveal_day_pending = True
+        self._queue_vertical_fit()
+
+    def _viewport_changed(self, _event=None):
+        self._reveal_day_pending = True
+        self._queue_vertical_fit()
+
+    def _queue_vertical_fit(self, _event=None):
+        if not self._destroying and self._vertical_job is None:
+            self._vertical_job = self.after_idle(self._fit_vertical)
+
+    def _fit_vertical(self):
+        """Reserve readable day cards using the current platform's font metrics.
+
+        A six-week month with both kinds of item is taller than an empty one.
+        Compact spacing first; if its full-size cells still cannot fit, scroll
+        the calendar itself so the day panel never extends beneath the footer.
+        """
+        self._vertical_job = None
+        if self.winfo_height() <= 1:
+            return
+        tab_overhead = max(0, self.day_notebook.winfo_reqheight() -
+                           max(self.tasks_tab.winfo_reqheight(), self.schedules_tab.winfo_reqheight()))
+        day_header_height = self._day_header.winfo_reqheight()
+        min_canvas = _pixels(self, 101)
+        normal_day = max(_pixels(self, 210), 24 + day_header_height + 10 + tab_overhead + 8 + min_canvas)
+        chrome = sum(widget.winfo_reqheight() for widget in (self._toolbar, self._modebar, self.summary))
+        natural_calendar = self.calendar_frame.winfo_reqheight()
+        compact = 36 + chrome + 16 + 10 + 12 + 14 + natural_calendar + normal_day > self.winfo_height()
+        outer_y = 10 if compact else 18
+        gaps = (8, 6, 6, 8) if compact else (16, 10, 12, 14)
+        day_padding, day_gap, task_gap = (8, 6, 4) if compact else (12, 10, 8)
+        min_day = (2 * day_padding + day_header_height + day_gap + tab_overhead + task_gap + min_canvas
+                   if compact else normal_day)
+        available = self.winfo_height() - 2 * outer_y - chrome - sum(gaps) - min_day
+        height = max(1, min(natural_calendar, available))
+        scroll_needed = height < natural_calendar
+        signature = (compact, min_day, height, scroll_needed)
+        if signature == self._vertical_signature:
+            if scroll_needed and self._reveal_day_pending:
+                self._reveal_selected_day()
+            return
+        self._vertical_signature = signature
+        self.configure(padding=(24, outer_y))
+        for widget, gap in zip((self._toolbar, self._modebar, self.summary, self.calendar_viewport), gaps):
+            widget.grid_configure(pady=(0, gap))
+        self._daybox.configure(padding=(16, day_padding))
+        self._day_header.grid_configure(pady=(0, day_gap))
+        self.task_cards.pack_configure(pady=(task_gap, 0))
+        self.rowconfigure(4, minsize=min_day)
+        self.calendar_viewport.canvas.configure(height=height)
+        self._calendar_scroll = scroll_needed
+        scrollbar = self.calendar_viewport.scrollbar
+        if self._calendar_scroll:
+            if not scrollbar.winfo_manager():
+                scrollbar.pack(side="right", fill="y", before=self.calendar_viewport.canvas)
+            if self._reveal_day_pending:
+                self._reveal_selected_day()
+        else:
+            scrollbar.pack_forget()
+            self.calendar_viewport.canvas.yview_moveto(0)
+
+    def _reveal_selected_day(self):
+        button = self._selected_day_button
+        if button is None or not button.winfo_exists() or button.winfo_height() <= 1:
+            return
+        canvas = self.calendar_viewport.canvas
+        top = button.winfo_rooty() - self.calendar_frame.winfo_rooty()
+        bottom = top + button.winfo_height()
+        visible_top = canvas.canvasy(0)
+        total = max(1, self.calendar_frame.winfo_height())
+        if top < visible_top:
+            canvas.yview_moveto(top / total)
+        elif bottom > visible_top + canvas.winfo_height():
+            canvas.yview_moveto(max(0, bottom - canvas.winfo_height()) / total)
+        self._reveal_day_pending = False
+
+    def destroy(self):
+        self._destroying = True
+        if self._vertical_job is not None:
+            try:
+                self.after_cancel(self._vertical_job)
+            except tk.TclError:
+                pass
+            self._vertical_job = None
+        super().destroy()
 
     def _period_range(self):
         if self.mode.get() == "week":
@@ -283,6 +383,8 @@ class CalendarView(ttk.Frame):
             self._draw_day()
 
     def _draw_calendar(self):
+        self._selected_day_button = None
+        self._reveal_day_pending = True
         for child in self.calendar_frame.winfo_children():
             child.destroy()
         for column in range(7):
@@ -293,6 +395,7 @@ class CalendarView(ttk.Frame):
             self._draw_month()
         else:
             self._draw_year()
+        self._queue_vertical_fit()
 
     def _day_style(self, value):
         if value == self.selected_date:
@@ -309,6 +412,8 @@ class CalendarView(ttk.Frame):
             button = ttk.Button(frame, text=f"{WEEKDAYS[col]}\n{day:%d/%m}", style=self._day_style(day),
                                 command=lambda value=day: self.show_day(value))
             button.pack(fill="x", pady=(0, 6))
+            if day == self.selected_date:
+                self._selected_day_button = button
             occurrences = self._by_day.get(day, [])
             tasks = self._tasks_by_day.get(day, [])
             counts = []
@@ -345,6 +450,8 @@ class CalendarView(ttk.Frame):
                 button = ttk.Button(self.calendar_frame, text=label, style="Calendar." + self._day_style(value), width=0,
                                     command=lambda d=value: self.show_day(d))
                 button.grid(row=row, column=col, sticky="nsew", padx=2, pady=2)
+                if value == self.selected_date:
+                    self._selected_day_button = button
 
     def _draw_year(self):
         # Two readable lines preserve room for the selected day's results.
@@ -357,6 +464,8 @@ class CalendarView(ttk.Frame):
             button = ttk.Button(self.calendar_frame, text=text, style="Month.TButton",
                                 command=lambda m=month: self._open_month(m))
             button.grid(row=(month - 1) // 4, column=(month - 1) % 4, sticky="nsew", padx=3, pady=3)
+            if month == self.selected_date.month:
+                self._selected_day_button = button
 
     def _open_month(self, month):
         self.anchor = self.selected_date = date(self.anchor.year, month, 1)
