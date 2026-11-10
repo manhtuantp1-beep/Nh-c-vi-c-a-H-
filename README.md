@@ -34,13 +34,13 @@ Hướng dẫn thao tác và nâng cấp: [docs/giao-dien.md](docs/giao-dien.md)
 
 ## Tải và cài trên Windows
 
-**Mã nguồn hiện tại là 2.0.5. Tag `v2.0.5` đã được đẩy để chạy quy trình dựng và kiểm tra Windows; kết quả bộ cài và phát hành đang chờ xác nhận.** Các liên kết 2.0.5 dưới đây là vị trí dự kiến, chưa xác nhận sẵn sàng tải.
+**Bộ cài 2.0.5 đã đạt [kiểm tra Windows](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/actions/runs/42762773298), [được phát hành](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/tag/windows-2.0.5-preview.1) và tải lại để đối chiếu SHA256.**
 
-[Bộ cài 2.0.5 dự kiến](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/download/windows-2.0.5-preview.1/NhacViecAnhHa-Setup-2.0.5-x64.exe) · [Trang phát hành dự kiến](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/tag/windows-2.0.5-preview.1)
+**[Tải bộ cài 2.0.5 — Windows x64](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/download/windows-2.0.5-preview.1/NhacViecAnhHa-Setup-2.0.5-x64.exe)** · [Trang phát hành](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/tag/windows-2.0.5-preview.1)
 
-Sau khi bản phát hành được xác nhận:
+Cài đặt và nâng cấp:
 
-1. Tải bộ cài và `SHA256SUMS.txt` của cùng bản.
+1. Tải bộ cài và [SHA256SUMS.txt](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/download/windows-2.0.5-preview.1/SHA256SUMS.txt) của cùng bản.
 2. Lưu nội dung đang sửa, sao lưu rồi **Thoát hẳn** ứng dụng. Dấu X chỉ thu nhỏ và chưa đủ để cập nhật.
 3. Đối chiếu SHA256, chạy bộ cài vào thư mục chương trình hiện tại. Nếu bộ cài yêu cầu đóng chương trình, đóng chương trình được nêu rồi Thử lại; chọn Hủy nếu cần quay lại lưu nội dung.
 4. Mở Nhắc việc anh Hà và kiểm tra phiên bản ở thanh dưới. Dùng bộ cài không cần cài Python hoặc NSIS.
@@ -49,9 +49,11 @@ Dữ liệu tiếp tục nằm tại `%USERPROFILE%\NhacViecAnhHaMoi\data\tasks.
 
 Để dùng dữ liệu từ tệp sao lưu đang có trên máy, mở **Dữ liệu và báo cáo → Khôi phục dữ liệu**, chọn tệp `.db`, kiểm tra thông báo rồi xác nhận thay thế. Ứng dụng giữ bản dự phòng trước khôi phục, kiểm tra cấu trúc/toàn vẹn và giữ nguyên tệp nguồn. Bộ cài chung không chứa tệp sao lưu của người dùng. Xem [hướng dẫn dữ liệu](docs/huong-dan.md#sao-lưu-và-khôi-phục).
 
+Mã nguồn đã kiểm thử: [e152e9e](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/tree/e152e9e256e34a7135ecdc45774cc4ce8c0a0add). Bộ cài có kích thước **17.152.498 byte**, SHA256 `5ad9c2db965bbbe1184261f28a12da62f80f2fb22e38ab42d3395194ead3e169`; tệp tải lại khớp `SHA256SUMS.txt`.
+
 Bản 2.0.4 đã phát hành vẫn có tại [đây](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/tag/windows-2.0.4-preview.1), nhưng không có ba kiểu xem mới. Lịch sử kiểm tra và checksum của bản đó nằm trong [phạm vi kiểm tra](docs/kiem-thu.md). [Cách xử lý lỗi ghi tệp khi cài](docs/cai-dat.md).
 
-Ảnh Windows 2.0.5 dự kiến: [Lưới](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/download/windows-2.0.5-preview.1/tasks-1366x768.png) · [Danh sách](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/download/windows-2.0.5-preview.1/tasks-list-1366x768.png) · [Rộng](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/download/windows-2.0.5-preview.1/tasks-wide-1366x768.png). Chưa dùng ảnh/kết quả EXE của 2.0.4 làm bằng chứng chạy 2.0.5.
+Ảnh từ chính EXE Windows 2.0.5: [Lưới](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/download/windows-2.0.5-preview.1/tasks-1366x768.png) · [Danh sách](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/download/windows-2.0.5-preview.1/tasks-list-1366x768.png) · [Rộng](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/download/windows-2.0.5-preview.1/tasks-wide-1366x768.png). Ảnh dùng dữ liệu tổng hợp tạm thời, đã được tải lại và xem; không kèm dữ liệu cá nhân.
 
 ## Chạy mã nguồn
 
@@ -124,11 +126,11 @@ dist\SHA256SUMS.txt
 
 Bộ cài chạy theo tài khoản hiện tại, có lựa chọn Desktop và tự chạy khi đăng nhập, không cần quyền quản trị theo cấu hình mặc định. Gỡ cài đặt giữ lại dữ liệu. Bộ cài chưa có chữ ký số; máy áp dụng Application Control có thể cần IT phê duyệt hoặc chữ ký phù hợp.
 
-Trên GitHub, Actions → Build Windows installer → Run workflow cho phép dựng thủ công từ `main`. Đẩy tag phiên bản cũng khởi chạy dựng Windows; riêng tag `v2.0.5` được nối với workflow phát hành sau khi lần dựng thành công. Workflow phát hành xác minh nguồn tag thuộc `main`, mã nguồn đã kiểm thử, checksum và các báo cáo trước khi tạo bản phát hành thử nghiệm. Artifact dự kiến mang tên `NhacViecAnhHa-Windows-x64-2.0.5`, gồm bộ cài, checksum, báo cáo runtime, bố cục và nâng cấp.
+Trên GitHub, Actions → Build Windows installer → Run workflow cho phép dựng thủ công từ `main`. Đẩy tag phiên bản cũng khởi chạy dựng Windows; các tag `v2.0.5` và `v2.0.5-build.N` được nối với workflow phát hành sau khi lần dựng thành công. Workflow phát hành xác minh nguồn tag thuộc `main`, mã nguồn đã kiểm thử, checksum và các báo cáo trước khi tạo bản phát hành thử nghiệm. Artifact mang tên `NhacViecAnhHa-Windows-x64-2.0.5`, gồm bộ cài, checksum, báo cáo runtime, bố cục và nâng cấp.
 
 ## Phạm vi kiểm tra
 
-**2.0.5**: mã ứng dụng tại [d5f94fd](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/tree/d5f94fd23caa5952606988c5fb496f93fb80e609) đạt **125 kiểm thử trên Linux/Xvfb**, tự kiểm tra nghiệp vụ/GUI và **72 kiểm tra bố cục, 73 PNG** dùng dữ liệu tổng hợp. Bộ ảnh Unicode kiểm tra cả Lưới/Danh sách/Rộng, hai cỡ cửa sổ và các pha tỷ lệ Tk. Tag `v2.0.5` đã khởi chạy quy trình Windows; EXE, cài/gỡ, lần dựng, kích thước và SHA256 còn chờ xác nhận. Xem [trạng thái kiểm tra hiện tại](docs/kiem-thu.md).
+**2.0.5**: [mã nguồn e152e9e](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/tree/e152e9e256e34a7135ecdc45774cc4ce8c0a0add) và [lần dựng Windows 42762773298](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/actions/runs/42762773298) đạt 125 kiểm thử, tự kiểm tra EXE nghiệp vụ/GUI/PerMonitorV2, **72 kiểm tra bố cục và 73 PNG**, cài/gỡ và 9 tình huống nâng cấp từ bản 2.0.3. Linux/Xvfb cũng đạt 125 kiểm thử và ma trận Unicode 72 kiểm tra/73 PNG. [Lần phát hành 42763127202](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/actions/runs/42763127202) tạo 16 tệp; bộ cài tải lại khớp checksum. Xem [bằng chứng và phạm vi kiểm tra](docs/kiem-thu.md).
 
 Lịch sử **2.0.4**: [lần dựng Windows 40293108356](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/actions/runs/40293108356) đạt 116 kiểm thử, tự kiểm tra EXE/GUI, 64 kiểm tra bố cục/65 PNG, cài/gỡ và kiểm tra nâng cấp từ bản 2.0.3 đã phát hành khi thư viện đang bị giữ. Bộ cài/gỡ dừng trước khi thay tệp bị khóa, thành công sau khi đóng chương trình; dữ liệu được giữ. Báo cáo [9 tình huống nâng cấp](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/download/windows-2.0.4-preview.1/installer-upgrade-test.json) đạt, gồm mã 32 khi bản cũ đang chạy hoặc thư viện bị khóa, mã 5 khi thư viện chỉ đọc và mã 0 sau khi đóng. [Lần xuất bản 40294506634](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/actions/runs/40294506634) tạo 14 tệp; bộ cài tải lại khớp SHA256. Xem [chi tiết](docs/kiem-thu.md).
 

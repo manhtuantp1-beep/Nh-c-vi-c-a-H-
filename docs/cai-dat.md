@@ -1,6 +1,6 @@
 # Cài đặt và xử lý lỗi ghi tệp
 
-Mã nguồn hiện tại là 2.0.5; quy trình dựng/kiểm tra Windows đã khởi chạy và đang chờ kết quả. Cơ chế kiểm tra khóa tệp từ 2.0.4 được giữ trong mã nguồn. Bằng chứng Windows nêu dưới đây thuộc bản 2.0.4 đã phát hành.
+Bộ cài 2.0.5 đã được [kiểm tra trên Windows](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/actions/runs/42762773298) và [phát hành](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/tag/windows-2.0.5-preview.1). Bản này giữ cơ chế kiểm tra khóa tệp từ 2.0.4 và đạt lại 9 tình huống nâng cấp từ bộ cài 2.0.3, gồm tệp đang được giữ và cài thành công sau khi thoát ứng dụng.
 
 ## Khi bộ cài báo không ghi được `_sqlite3.pyd`
 
@@ -9,7 +9,7 @@ Lỗi như `Error opening file for writing: D:\NhacViecAnhHaMoi\_internal\_sqlit
 1. Trong thông báo lỗi của bộ cài cũ, chọn **Abort/Hủy** để dừng lần cài đang lỗi. Để bộ cài kết thúc rồi mới mở lại; không chọn Ignore/Bỏ qua vì sẽ thiếu tệp cần thiết.
 2. Nếu còn mở được ứng dụng, lưu công việc/ghi chú đang sửa và chọn **Thoát hẳn ứng dụng** ở thanh bên hoặc menu khay hệ thống.
 3. Nếu không mở được ứng dụng, nhấn **Ctrl+Shift+Esc**, mở **Details/Chi tiết**, chọn đúng **NhacViecAnhHa.exe** rồi **End task/Kết thúc tác vụ**. Kết thúc theo cách này có thể bỏ nội dung chưa lưu, nên ưu tiên bước 2 nếu ứng dụng vẫn dùng được.
-4. Chạy lại bộ cài của phiên bản đã được xác nhận phát hành và hoàn tất cài đặt. [Bản 2.0.4 đã có tại đây](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/tag/windows-2.0.4-preview.1); bản 2.0.5 cần được xác nhận riêng trước khi dùng. Chỉ mở ứng dụng sau khi bộ cài đã kết thúc.
+4. Chạy [bộ cài 2.0.5](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/download/windows-2.0.5-preview.1/NhacViecAnhHa-Setup-2.0.5-x64.exe) và hoàn tất cài đặt. Chỉ mở ứng dụng sau khi bộ cài đã kết thúc.
 
 Nếu vẫn bị khóa, khởi động lại Windows rồi chạy bộ cài trước khi mở ứng dụng. Nếu đã chọn tự chạy khi đăng nhập, ứng dụng có thể mở nền sau khi khởi động lại: hãy Thoát hẳn từ biểu tượng khay hoặc kiểm tra Details trước khi chạy bộ cài.
 
@@ -27,9 +27,9 @@ Bộ cài có thể nhớ đường dẫn lần trước, nên cần kiểm tra 
 
 Không cần xóa cơ sở dữ liệu, thư mục dữ liệu hoặc tự xóa `_internal` để sửa lỗi này. Sau lần cài bị dừng, chạy bộ cài lại đầy đủ để sửa tệp chương trình.
 
-## Cách bộ cài 2.0.4 xử lý trước khi cập nhật
+## Kiểm tra trước khi cập nhật
 
-Bản 2.0.4 đã qua [kiểm tra nâng cấp trên Windows](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/actions/runs/40293108356) từ bộ cài 2.0.3 đã phát hành. Thay đổi được bổ sung là kiểm tra khóa tệp bằng Windows Restart Manager và khả năng ghi thư mục **trước khi chép tệp ứng dụng**. Khi phát hiện tệp đang được sử dụng, bộ cài yêu cầu đóng chương trình liên quan rồi **Thử lại** hoặc **Hủy**; không tự ép kết thúc chương trình. Anh có thể Hủy để quay lại lưu nội dung đang làm.
+Bản 2.0.5 đã qua [kiểm tra nâng cấp trên Windows](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/actions/runs/42762773298) từ bộ cài 2.0.3 đã phát hành, tiếp nối phần bảo vệ có từ 2.0.4. Thay đổi được bổ sung là kiểm tra khóa tệp bằng Windows Restart Manager và khả năng ghi thư mục **trước khi chép tệp ứng dụng**. Khi phát hiện tệp đang được sử dụng, bộ cài yêu cầu đóng chương trình liên quan rồi **Thử lại** hoặc **Hủy**; không tự ép kết thúc chương trình. Anh có thể Hủy để quay lại lưu nội dung đang làm.
 
 Khi điều kiện chưa đạt, chế độ cài im lặng trả mã lỗi thay vì tiếp tục. Bộ gỡ cũng phải kiểm tra trước khi xóa tệp chương trình. Báo cáo 9 tình huống nâng cấp từ đúng bộ cài 2.0.3 đã phát hành đã đạt, gồm ứng dụng đang nạp thư viện thật, khóa độc quyền, tệp chỉ đọc, gỡ khi đang chạy và thành công sau khi đóng. Các phép kiểm tra dùng chế độ im lặng; xem [bằng chứng và phạm vi kiểm tra](kiem-thu.md).
 

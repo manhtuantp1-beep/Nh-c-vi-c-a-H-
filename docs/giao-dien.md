@@ -4,9 +4,13 @@
 
 Bản 2.0.5 dùng ba kiểu xem công việc và giữ cách hiển thị chữ đã có: thanh điều hướng xanh navy, thẻ nội dung trắng và chữ đậm màu. Cỡ chữ nội dung mặc định 12 pt, tên công việc 13 pt đậm và thông tin phụ 11 pt. Cỡ chữ theo DPI của màn hình lúc mở ứng dụng. Xem [nguyên nhân chữ mờ và cách nâng cấp](readability.md).
 
-## Trạng thái ảnh Windows
+## Ảnh từ EXE Windows đã phát hành
 
-Bộ cài và ảnh từ EXE Windows 2.0.5 đang chờ kiểm tra/phát hành. Vị trí ảnh dự kiến: [Lưới](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/download/windows-2.0.5-preview.1/tasks-1366x768.png), [Danh sách](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/download/windows-2.0.5-preview.1/tasks-list-1366x768.png), [Rộng](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/download/windows-2.0.5-preview.1/tasks-wide-1366x768.png). Chưa xác nhận các liên kết sẵn sàng tải; xem [kết quả kiểm tra](kiem-thu.md).
+Các ảnh 2.0.5 dưới đây được tạo từ chính EXE đóng gói, dùng dữ liệu tổng hợp tạm thời và đã được tải lại để xem. Pha native ghi DPI cửa sổ là 96; xem [bằng chứng kiểm tra](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/actions/runs/42762773298) và [phạm vi kiểm tra](kiem-thu.md).
+
+![Lưới mặc định](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/download/windows-2.0.5-preview.1/tasks-1366x768.png)
+
+Xem thêm [Danh sách](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/download/windows-2.0.5-preview.1/tasks-list-1366x768.png), [Rộng](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/download/windows-2.0.5-preview.1/tasks-wide-1366x768.png), [Lịch](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/download/windows-2.0.5-preview.1/calendar-tasks-1366x768.png) và [Ghi chú](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/download/windows-2.0.5-preview.1/notes-dialog.png).
 
 ## Không gian làm việc
 
@@ -60,7 +64,7 @@ Dữ liệu và báo cáo trên thanh bên mở menu Xuất báo cáo Excel, Sao
 
 1. Trong bản đang dùng, chọn Sao lưu dữ liệu và lưu bản sao ở vị trí dễ tìm. Với 2.0.1, mục này nằm trong Dữ liệu và báo cáo.
 2. Chọn Thoát hẳn trong ứng dụng hoặc menu khay hệ thống. Đóng cửa sổ bằng dấu X chỉ thu nhỏ ứng dụng và chưa đủ để cập nhật.
-3. Sau khi 2.0.5 được xác nhận phát hành, tải và chạy [bộ cài 2.0.5](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/download/windows-2.0.5-preview.1/NhacViecAnhHa-Setup-2.0.5-x64.exe). Giữ nguyên thư mục cài đặt đang dùng, rồi hoàn tất cài đặt.
+3. Tải và chạy [bộ cài 2.0.5](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/download/windows-2.0.5-preview.1/NhacViecAnhHa-Setup-2.0.5-x64.exe). Giữ nguyên thư mục cài đặt đang dùng, rồi hoàn tất cài đặt.
 4. Mở ứng dụng và kiểm tra số phiên bản 2.0.5 ở thanh dưới cùng. Công việc, lịch và cài đặt 2.0.x dùng lại cơ sở dữ liệu hiện có tại `%USERPROFILE%\NhacViecAnhHaMoi\data\tasks.db`.
 
 Từ 2.0.3–2.0.4 lên 2.0.5 giữ schema 2, không nâng cấp lại cơ sở dữ liệu. Khi nâng cấp từ 2.0.0–2.0.2, ứng dụng tự nâng cấp schema 1 lên schema 2 để thêm ghi chú, giữ nguyên vị trí và dữ liệu hiện có. Trước nâng cấp, ứng dụng kiểm tra dữ liệu và giữ bản `tasks.pre-upgrade-<ngày-giờ>.db` cùng thư mục. Không cần khôi phục hoặc nhập lại công việc. Sau nâng cấp, dùng 2.0.3 trở lên vì các bản cũ không đọc schema 2. Chức năng Khôi phục vẫn nhận bản sao hợp lệ từ 2.0.0–2.0.2; tệp sao lưu nguồn được giữ nguyên. Dữ liệu của ứng dụng gốc 1.7.0 vẫn nằm riêng và chưa được tự động nhập vào bản mới.

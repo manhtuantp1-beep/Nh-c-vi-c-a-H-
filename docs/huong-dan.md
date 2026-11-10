@@ -1,6 +1,6 @@
 # Hướng dẫn sử dụng bản dựng mới
 
-Mã nguồn hiện tại: 2.0.5; quy trình Windows đã được khởi chạy từ tag phiên bản và đang chờ kết quả. Bản này bỏ khối bộ lọc cũ và thêm ba kiểu xem công việc, mặc định Lưới. Xem [bố cục, phím tắt và cách nâng cấp từ 2.0.x](giao-dien.md), cùng [thay đổi về DPI và chữ hiển thị](readability.md).
+Phiên bản hiện tại: 2.0.5; bộ cài Windows đã được kiểm tra và phát hành. Bản này bỏ khối bộ lọc cũ và thêm ba kiểu xem công việc, mặc định Lưới. Xem [bố cục, phím tắt và cách nâng cấp từ 2.0.x](giao-dien.md), cùng [thay đổi về DPI và chữ hiển thị](readability.md).
 
 ## Bắt đầu
 
@@ -66,7 +66,7 @@ Khi sao chép thủ công, Thoát hẳn rồi mới chép `tasks.db` trong `%USE
 
 ## Nâng cấp lên 2.0.5
 
-Sau khi bản 2.0.5 được xác nhận phát hành, lưu công việc/ghi chú đang sửa, sao lưu, Thoát hẳn ứng dụng rồi cài vào vị trí hiện tại. Từ 2.0.3–2.0.4 lên 2.0.5 tiếp tục dùng schema 2 và không nâng cấp lại dữ liệu. Với 2.0.0–2.0.2: lần mở đầu kiểm tra cơ sở dữ liệu, giữ bản `tasks.pre-upgrade-<ngày-giờ>.db` trong thư mục dữ liệu, rồi thêm ghi chú bằng nâng cấp schema 2. Công việc, lịch, lịch sử và cài đặt được giữ lại; ghi chú của việc cũ bắt đầu trống. Tiếp tục dùng 2.0.3 trở lên với dữ liệu đã nâng cấp; bản 2.0.2 trở về trước không đọc schema 2.
+Lưu công việc/ghi chú đang sửa, sao lưu, Thoát hẳn ứng dụng rồi chạy [bộ cài 2.0.5](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/download/windows-2.0.5-preview.1/NhacViecAnhHa-Setup-2.0.5-x64.exe) vào vị trí hiện tại. Từ 2.0.3–2.0.4 lên 2.0.5 tiếp tục dùng schema 2 và không nâng cấp lại dữ liệu. Với 2.0.0–2.0.2: lần mở đầu kiểm tra cơ sở dữ liệu, giữ bản `tasks.pre-upgrade-<ngày-giờ>.db` trong thư mục dữ liệu, rồi thêm ghi chú bằng nâng cấp schema 2. Công việc, lịch, lịch sử và cài đặt được giữ lại; ghi chú của việc cũ bắt đầu trống. Tiếp tục dùng 2.0.3 trở lên với dữ liệu đã nâng cấp; bản 2.0.2 trở về trước không đọc schema 2.
 
 Nếu cài không ghi được `_sqlite3.pyd` hoặc tệp khác, xem [hướng dẫn cài đặt và xử lý lỗi](cai-dat.md).
 
