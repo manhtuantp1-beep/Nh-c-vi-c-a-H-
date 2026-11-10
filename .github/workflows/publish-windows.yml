@@ -1,6 +1,11 @@
 name: Publish Windows installer
 
 on:
+  workflow_run:
+    workflows:
+      - Build Windows installer
+    types:
+      - completed
   workflow_dispatch:
     inputs:
       build_run_id:
@@ -13,21 +18,27 @@ on:
         type: string
 
 concurrency:
-  group: publish-windows-2.0.4-preview.1
+  group: publish-windows-2.0.5-preview.1
   cancel-in-progress: false
 
 permissions: {}
 
 jobs:
   publish-installer:
+    if: >-
+      ${{ github.event_name == 'workflow_dispatch' ||
+          (github.event.workflow_run.conclusion == 'success' &&
+           github.event.workflow_run.event == 'push' &&
+           github.event.workflow_run.head_branch == 'v2.0.5' &&
+           github.event.workflow_run.head_repository.full_name == github.repository) }}
     runs-on: windows-2022
     timeout-minutes: 15
     permissions:
       contents: write
       actions: read
     env:
-      BUILD_RUN_ID: ${{ inputs.build_run_id }}
-      EXPECTED_SHA: ${{ inputs.expected_sha }}
+      BUILD_RUN_ID: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.id || inputs.build_run_id }}
+      EXPECTED_SHA: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || inputs.expected_sha }}
 
     steps:
       - name: Validate successful Windows build provenance
@@ -59,7 +70,35 @@ jobs:
           if (([string]$Run.head_sha).ToLowerInvariant() -cne $ExpectedSha) {
             throw 'The successful build did not test expected_sha.'
           }
-          if ($Run.head_branch -cne 'main') { throw 'The build must come from main.' }
+          if ($env:GITHUB_EVENT_NAME -ceq 'workflow_run') {
+            $Event = Get-Content -LiteralPath $env:GITHUB_EVENT_PATH -Raw | ConvertFrom-Json
+            if ([string]$Event.workflow_run.id -cne $env:BUILD_RUN_ID -or
+                ([string]$Event.workflow_run.head_sha).ToLowerInvariant() -cne $ExpectedSha -or
+                $Event.workflow_run.conclusion -cne 'success' -or
+                $Event.workflow_run.head_repository.full_name -ine $env:GITHUB_REPOSITORY -or
+                $Run.event -cne 'push' -or $Run.head_branch -cne 'v2.0.5') {
+              throw 'Automatic publication requires the triggering successful v2.0.5 tag build from this repository.'
+            }
+            $TagJson = & gh api "repos/$env:GITHUB_REPOSITORY/git/ref/tags/v2.0.5"
+            if ($LASTEXITCODE -ne 0) { throw 'Unable to read the version tag.' }
+            $TagRef = ($TagJson -join "`n") | ConvertFrom-Json
+            if ($TagRef.ref -cne 'refs/tags/v2.0.5' -or $TagRef.object.type -cne 'commit' -or
+                ([string]$TagRef.object.sha).ToLowerInvariant() -cne $ExpectedSha) {
+              throw 'The lightweight version tag must point directly to the tested source commit.'
+            }
+            $CompareJson = & gh api "repos/$env:GITHUB_REPOSITORY/compare/${ExpectedSha}...main"
+            if ($LASTEXITCODE -ne 0) { throw 'Unable to verify that the tag source belongs to main.' }
+            $Comparison = ($CompareJson -join "`n") | ConvertFrom-Json
+            if ($Comparison.status -cnotin @('identical', 'ahead') -or
+                ([string]$Comparison.base_commit.sha).ToLowerInvariant() -cne $ExpectedSha -or
+                ([string]$Comparison.merge_base_commit.sha).ToLowerInvariant() -cne $ExpectedSha) {
+              throw 'The tested version tag must identify a commit reachable from main.'
+            }
+          } elseif ($env:GITHUB_EVENT_NAME -ceq 'workflow_dispatch') {
+            if ($Run.head_branch -cne 'main') { throw 'A manually selected build must come from main.' }
+          } else {
+            throw 'Unsupported publication trigger.'
+          }
           $WorkflowPath = ([string]$Run.path -split '@', 2)[0]
           if ($WorkflowPath -cne '.github/workflows/windows-build.yml') {
             throw 'The run did not use the Windows installer build workflow.'
@@ -71,9 +110,9 @@ jobs:
       - name: Download installer from the validated build
         uses: actions/download-artifact@v4
         with:
-          name: NhacViecAnhHa-Windows-x64-2.0.4
+          name: NhacViecAnhHa-Windows-x64-2.0.5
           path: installer
-          run-id: ${{ inputs.build_run_id }}
+          run-id: ${{ env.BUILD_RUN_ID }}
           repository: ${{ github.repository }}
           github-token: ${{ github.token }}
 
@@ -83,7 +122,7 @@ jobs:
           $ErrorActionPreference = 'Stop'
           Set-StrictMode -Version Latest
           $InstallerDirectory = Join-Path $env:GITHUB_WORKSPACE 'installer'
-          $InstallerName = 'NhacViecAnhHa-Setup-2.0.4-x64.exe'
+          $InstallerName = 'NhacViecAnhHa-Setup-2.0.5-x64.exe'
           $InstallerPath = Join-Path $InstallerDirectory $InstallerName
           if (-not (Test-Path -LiteralPath $InstallerPath -PathType Leaf)) {
             throw 'The installer executable is missing.'
@@ -101,7 +140,7 @@ jobs:
           }
           $ChecksumPath = Join-Path $InstallerDirectory 'SHA256SUMS.txt'
           $ChecksumText = Get-Content -LiteralPath $ChecksumPath -Raw
-          $ChecksumPattern = '\A(?<hash>[0-9a-fA-F]{64})  NhacViecAnhHa-Setup-2\.0\.4-x64\.exe(?:\r?\n)?\z'
+          $ChecksumPattern = '\A(?<hash>[0-9a-fA-F]{64})  NhacViecAnhHa-Setup-2\.0\.5-x64\.exe(?:\r?\n)?\z'
           if ($ChecksumText -cnotmatch $ChecksumPattern) {
             throw 'SHA256SUMS.txt must contain exactly the expected installer entry.'
           }
@@ -115,7 +154,7 @@ jobs:
             $ReportPath = Join-Path $InstallerDirectory $Check.File
             $Report = Get-Content -LiteralPath $ReportPath -Raw | ConvertFrom-Json
             if ($null -eq $Report -or $Report.passed -isnot [bool] -or $Report.passed -ne $true -or
-                $Report.gui -isnot [bool] -or $Report.gui -ne $Check.Gui -or $Report.version -cne '2.0.4') {
+                $Report.gui -isnot [bool] -or $Report.gui -ne $Check.Gui -or $Report.version -cne '2.0.5') {
               throw "Invalid packaged self-test result: $($Check.File)."
             }
             if ($Report.checks -isnot [System.Array] -or @($Report.checks).Count -eq 0) {
@@ -130,7 +169,7 @@ jobs:
           $UpgradePath = Join-Path $InstallerDirectory 'installer-upgrade-test.json'
           $Upgrade = Get-Content -LiteralPath $UpgradePath -Raw | ConvertFrom-Json
           if ($null -eq $Upgrade -or $Upgrade.passed -isnot [bool] -or $Upgrade.passed -ne $true -or
-              $Upgrade.version -cne '2.0.4' -or $Upgrade.baseline_version -cne '2.0.3' -or
+              $Upgrade.version -cne '2.0.5' -or $Upgrade.baseline_version -cne '2.0.3' -or
               $Upgrade.checks -isnot [System.Array] -or @($Upgrade.checks).Count -eq 0 -or
               $Upgrade.cases -isnot [System.Array] -or @($Upgrade.cases).Count -eq 0) {
             throw 'The installer upgrade regression report is invalid or incomplete.'
@@ -158,8 +197,8 @@ jobs:
           $LayoutDirectory = Join-Path $InstallerDirectory 'ui-preview'
           $LayoutReport = Get-Content (Join-Path $LayoutDirectory 'layout-check.json') -Raw | ConvertFrom-Json
           if ($LayoutReport.passed -isnot [bool] -or $LayoutReport.passed -ne $true -or
-              $LayoutReport.version -cne '2.0.4' -or $LayoutReport.platform -cne 'win32' -or
-              @($LayoutReport.checks).Count -lt 48 -or @($LayoutReport.screenshots).Count -lt 48 -or
+              $LayoutReport.version -cne '2.0.5' -or $LayoutReport.platform -cne 'win32' -or
+              @($LayoutReport.checks).Count -lt 72 -or @($LayoutReport.screenshots).Count -lt 73 -or
               $LayoutReport.frozen -isnot [bool] -or $LayoutReport.frozen -ne $true -or
               $LayoutReport.executable -cne 'NhacViecAnhHa.exe' -or
               $LayoutReport.display_state.awareness -cne 'per-monitor-v2' -or
@@ -174,7 +213,8 @@ jobs:
               throw "The frozen application did not verify the ${ExpectedDpi}-DPI font/layout phase."
             }
           }
-          foreach ($Preview in @('tasks-1366x768.png', 'calendar-month-1366x768.png', 'calendar-tasks-1366x768.png', 'task-dialog.png', 'notes-dialog.png',
+          foreach ($Preview in @('tasks-1366x768.png', 'tasks-list-1366x768.png', 'tasks-wide-1366x768.png',
+                                  'calendar-month-1366x768.png', 'calendar-tasks-1366x768.png', 'task-dialog.png', 'notes-dialog.png',
                                   'tasks-1366x768-tk120dpi.png', 'tasks-1366x768-tk144dpi.png', 'tasks-1366x768-tk192dpi.png')) {
             $Bytes = [System.IO.File]::ReadAllBytes((Join-Path $LayoutDirectory $Preview))
             if ($Bytes.Length -lt 100 -or [System.BitConverter]::ToString($Bytes, 0, 8) -cne '89-50-4E-47-0D-0A-1A-0A') {
@@ -192,7 +232,7 @@ jobs:
           $PSNativeCommandUseErrorActionPreference = $false
           Set-StrictMode -Version Latest
           $Repository = $env:GITHUB_REPOSITORY
-          $Tag = 'windows-2.0.4-preview.1'
+          $Tag = 'windows-2.0.5-preview.1'
           $ExpectedSha = $env:VALIDATED_BUILD_SHA
           function Assert-GitHubResourceMissing {
             param([string]$Endpoint, [string]$Description)
@@ -207,13 +247,17 @@ jobs:
           Assert-GitHubResourceMissing "repos/$Repository/releases/tags/$Tag" "Release $Tag"
           Assert-GitHubResourceMissing "repos/$Repository/git/ref/tags/$Tag" "Tag $Tag"
           $Notes = @'
-          Bộ cài Nhắc việc anh Hà 2.0.4 dành cho Windows 10/11 x64, phát hành thử nghiệm.
+          Bộ cài Nhắc việc anh Hà 2.0.5 dành cho Windows 10/11 x64, phát hành thử nghiệm.
 
-          Sửa lỗi cài đè báo không mở được `_internal\_sqlite3.pyd` để ghi. Trước khi chép hoặc gỡ tệp, bộ cài kiểm tra tệp ứng dụng đang bị giữ và quyền ghi thư mục đích. Nếu ứng dụng cũ còn chạy, anh có thể lưu nội dung, chọn Thoát hẳn rồi Thử lại; bộ cài không tự kết thúc tiến trình. Chế độ cài im lặng dừng với mã lỗi trước khi thay tệp.
+          Trang công việc bỏ toàn bộ khu vực bộ lọc, tìm kiếm và dòng đếm cũ để dành chỗ cho công việc. Có ba kiểu xem: Lưới, Danh sách và Rộng. Lưới là mặc định khi mở ứng dụng; anh có thể đổi kiểu xem bằng thanh lựa chọn gọn phía trên các thẻ việc. Ctrl+F mở cửa sổ tìm kiếm khi cần.
+
+          Các kiểu xem cùng sử dụng công việc, trạng thái và ghi chú đang có; chuyển kiểu xem không tạo thêm hay sửa dữ liệu. Lịch theo deadline và phần Ghi chú tiếp tục dùng cùng bản ghi công việc.
+
+          Bộ cài giữ bước kiểm tra tệp đang bị giữ và quyền ghi trước khi cập nhật. Nếu bản cũ còn chạy, anh lưu nội dung rồi chọn Thoát hẳn trước khi thử lại.
 
           Các kiểm tra nâng cấp đã dùng chính bản 2.0.3 đang chạy và tình huống tệp SQLite bị khóa. Lần nâng cấp bị chặn giữ nguyên tệp ứng dụng và dữ liệu; sau khi đóng ứng dụng hoặc nhả khóa, cài đè thành công. Gỡ cài đặt cũng được chặn khi ứng dụng đang chạy. Báo cáo `installer-upgrade-test.json` được đính kèm.
 
-          Giữ các chức năng lịch theo deadline, thẻ công việc và Ghi chú từ 2.0.3. Bản 2.0.4 dùng cùng schema 2; dữ liệu 2.0.3 không cần chuyển đổi thêm.
+          Bản 2.0.5 dùng cùng schema 2; dữ liệu từ 2.0.3 và 2.0.4 không cần chuyển đổi thêm. Để cập nhật từ tệp sao lưu riêng trên máy, mở Dữ liệu và báo cáo → Khôi phục dữ liệu và chọn tệp `.db`; ứng dụng kiểm tra tệp và giữ bản dự phòng trước khi thay dữ liệu. Bộ cài và các ảnh công khai chỉ dùng dữ liệu minh họa, không kèm dữ liệu cá nhân.
 
           Bản dựng tham chiếu đã chạy thành công toàn bộ kiểm thử mã nguồn trên Windows, kiểm tra EXE bằng `--self-test` và `--gui-smoke-test`, cùng kiểm tra cài đặt và gỡ cài đặt tự động. Hai báo cáo kiểm tra EXE và mã SHA256 được đính kèm.
 
@@ -222,16 +266,18 @@ jobs:
 
           Đã kiểm tra chính EXE đã đóng gói: nhận thức DPI PerMonitorV2, bố cục ở hai kích thước cửa sổ logic 1120×720 và 1366×768, cùng cỡ chữ/bố cục Tk tương đương 125%, 150% và 200%. Các mức sau là mô phỏng cỡ chữ/bố cục của ứng dụng, không thay đổi thiết lập DPI của Windows. Ảnh chụp từ ứng dụng thật bằng dữ liệu minh họa tạm thời; ảnh ở từng mức được đính kèm.
 
-          ![Danh sách công việc](https://github.com/__REPOSITORY__/releases/download/windows-2.0.4-preview.1/tasks-1366x768.png)
-          ![Công việc theo ngày deadline](https://github.com/__REPOSITORY__/releases/download/windows-2.0.4-preview.1/calendar-tasks-1366x768.png)
-          ![Ghi chú công việc](https://github.com/__REPOSITORY__/releases/download/windows-2.0.4-preview.1/notes-dialog.png)
+          ![Công việc dạng lưới mặc định](https://github.com/__REPOSITORY__/releases/download/windows-2.0.5-preview.1/tasks-1366x768.png)
+          ![Công việc dạng danh sách](https://github.com/__REPOSITORY__/releases/download/windows-2.0.5-preview.1/tasks-list-1366x768.png)
+          ![Công việc dạng rộng](https://github.com/__REPOSITORY__/releases/download/windows-2.0.5-preview.1/tasks-wide-1366x768.png)
+          ![Công việc theo ngày deadline](https://github.com/__REPOSITORY__/releases/download/windows-2.0.5-preview.1/calendar-tasks-1366x768.png)
+          ![Ghi chú công việc](https://github.com/__REPOSITORY__/releases/download/windows-2.0.5-preview.1/notes-dialog.png)
 
           Cài đặt:
-          1. Tải `NhacViecAnhHa-Setup-2.0.4-x64.exe` và `SHA256SUMS.txt` từ phần Assets.
+          1. Tải `NhacViecAnhHa-Setup-2.0.5-x64.exe` và `SHA256SUMS.txt` từ phần Assets.
           2. Đối chiếu SHA256, sau đó mở bộ cài và làm theo hướng dẫn. Ứng dụng được cài cho tài khoản Windows hiện tại.
           3. Mở Nhắc việc anh Hà từ menu Start hoặc trang cuối của bộ cài.
 
-          Chọn Thoát hẳn ứng dụng trước khi chạy bộ cài mới; không cần gỡ bản cũ. Nếu đang dùng 2.0.3, công việc, lịch, ghi chú và cài đặt tiếp tục dùng được ngay. Nếu nâng từ 2.0.0–2.0.2, lần mở đầu kiểm tra dữ liệu, giữ bản sao trước nâng cấp và bổ sung trường Ghi chú. Bản sao lưu 2.0.0–2.0.2 vẫn có thể khôi phục; dữ liệu đã nâng cấp cần ứng dụng hỗ trợ schema 2, gồm 2.0.3 hoặc mới hơn.
+          Chọn Thoát hẳn ứng dụng trước khi chạy bộ cài mới; không cần gỡ bản cũ. Nếu đang dùng 2.0.3 hoặc 2.0.4, công việc, lịch, ghi chú và cài đặt tiếp tục dùng được ngay. Nếu nâng từ 2.0.0–2.0.2, lần mở đầu kiểm tra dữ liệu, giữ bản sao trước nâng cấp và bổ sung trường Ghi chú. Bản sao lưu 2.0.0–2.0.2 vẫn có thể khôi phục; dữ liệu đã nâng cấp cần ứng dụng hỗ trợ schema 2, gồm 2.0.3 hoặc mới hơn.
 
           Dữ liệu của bản mới nằm tại `~\NhacViecAnhHaMoi\data\tasks.db`, tách riêng dữ liệu bản cũ. Bản này chưa hỗ trợ tự động nhập cơ sở dữ liệu của bản 1.7.0; gỡ cài đặt giữ lại dữ liệu người dùng.
 
@@ -242,13 +288,15 @@ jobs:
           Set-Content -LiteralPath $NotesPath -Value $Notes -Encoding utf8
           $InstallerDirectory = Join-Path $env:GITHUB_WORKSPACE 'installer'
           $Assets = @(
-            (Join-Path $InstallerDirectory 'NhacViecAnhHa-Setup-2.0.4-x64.exe'),
+            (Join-Path $InstallerDirectory 'NhacViecAnhHa-Setup-2.0.5-x64.exe'),
             (Join-Path $InstallerDirectory 'SHA256SUMS.txt'),
             (Join-Path $InstallerDirectory 'self-test.json'),
             (Join-Path $InstallerDirectory 'gui-smoke-test.json'),
             (Join-Path $InstallerDirectory 'installer-upgrade-test.json'),
             (Join-Path $InstallerDirectory 'ui-preview/layout-check.json'),
             (Join-Path $InstallerDirectory 'ui-preview/tasks-1366x768.png'),
+            (Join-Path $InstallerDirectory 'ui-preview/tasks-list-1366x768.png'),
+            (Join-Path $InstallerDirectory 'ui-preview/tasks-wide-1366x768.png'),
             (Join-Path $InstallerDirectory 'ui-preview/calendar-month-1366x768.png'),
             (Join-Path $InstallerDirectory 'ui-preview/calendar-tasks-1366x768.png'),
             (Join-Path $InstallerDirectory 'ui-preview/task-dialog.png'),
@@ -257,7 +305,7 @@ jobs:
             (Join-Path $InstallerDirectory 'ui-preview/tasks-1366x768-tk144dpi.png'),
             (Join-Path $InstallerDirectory 'ui-preview/tasks-1366x768-tk192dpi.png')
           )
-          & gh release create $Tag @Assets --repo $Repository --target $ExpectedSha --prerelease --title 'Nhắc việc anh Hà 2.0.4 thử nghiệm — Windows x64' --notes-file $NotesPath
+          & gh release create $Tag @Assets --repo $Repository --target $ExpectedSha --prerelease --title 'Nhắc việc anh Hà 2.0.5 thử nghiệm — Windows x64' --notes-file $NotesPath
           if ($LASTEXITCODE -ne 0) { throw 'GitHub did not publish the Windows preview release successfully.' }
           $ReleaseUrl = & gh release view $Tag --repo $Repository --json url --jq '.url'
           if ($LASTEXITCODE -ne 0) { throw 'The release was published, but its URL could not be read.' }
