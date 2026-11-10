@@ -1,5 +1,7 @@
 # Cài đặt và xử lý lỗi ghi tệp
 
+Mã nguồn hiện tại là 2.0.5; bộ cài Windows 2.0.5 đang chờ dựng và kiểm tra. Cơ chế kiểm tra khóa tệp từ 2.0.4 được giữ trong mã nguồn. Bằng chứng Windows nêu dưới đây thuộc bản 2.0.4 đã phát hành.
+
 ## Khi bộ cài báo không ghi được `_sqlite3.pyd`
 
 Lỗi như `Error opening file for writing: D:\NhacViecAnhHaMoi\_internal\_sqlite3.pyd` có thể xuất hiện khi ứng dụng còn chạy và đang dùng thư viện, hoặc thư mục chương trình không cho phép ghi. Dấu X của ứng dụng chỉ thu nhỏ, nên cửa sổ đã đóng vẫn có thể giữ tệp.
@@ -7,7 +9,7 @@ Lỗi như `Error opening file for writing: D:\NhacViecAnhHaMoi\_internal\_sqlit
 1. Trong thông báo lỗi của bộ cài cũ, chọn **Abort/Hủy** để dừng lần cài đang lỗi. Để bộ cài kết thúc rồi mới mở lại; không chọn Ignore/Bỏ qua vì sẽ thiếu tệp cần thiết.
 2. Nếu còn mở được ứng dụng, lưu công việc/ghi chú đang sửa và chọn **Thoát hẳn ứng dụng** ở thanh bên hoặc menu khay hệ thống.
 3. Nếu không mở được ứng dụng, nhấn **Ctrl+Shift+Esc**, mở **Details/Chi tiết**, chọn đúng **NhacViecAnhHa.exe** rồi **End task/Kết thúc tác vụ**. Kết thúc theo cách này có thể bỏ nội dung chưa lưu, nên ưu tiên bước 2 nếu ứng dụng vẫn dùng được.
-4. Chạy [bộ cài 2.0.4](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/download/windows-2.0.4-preview.1/NhacViecAnhHa-Setup-2.0.4-x64.exe) và hoàn tất cài đặt. Chỉ mở ứng dụng sau khi bộ cài đã kết thúc.
+4. Chạy lại bộ cài của phiên bản đã được xác nhận phát hành và hoàn tất cài đặt. [Bản 2.0.4 đã có tại đây](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/tag/windows-2.0.4-preview.1); bản 2.0.5 cần được xác nhận riêng trước khi dùng. Chỉ mở ứng dụng sau khi bộ cài đã kết thúc.
 
 Nếu vẫn bị khóa, khởi động lại Windows rồi chạy bộ cài trước khi mở ứng dụng. Nếu đã chọn tự chạy khi đăng nhập, ứng dụng có thể mở nền sau khi khởi động lại: hãy Thoát hẳn từ biểu tượng khay hoặc kiểm tra Details trước khi chạy bộ cài.
 
@@ -33,7 +35,7 @@ Khi điều kiện chưa đạt, chế độ cài im lặng trả mã lỗi thay
 
 ## Nhật ký khi cần kiểm tra thêm
 
-Bộ cài/gỡ 2.0.4 ghi kết quả kiểm tra trước khi thay tệp vào:
+Bộ cài/gỡ từ 2.0.4 ghi kết quả kiểm tra trước khi thay tệp vào:
 
 ```text
 %TEMP%\NhacViecAnhHa-Setup-last.log
@@ -44,6 +46,8 @@ Mỗi lần chạy sẽ thay nội dung nhật ký tương ứng. Nhật ký ghi
 
 ## Nâng cấp dữ liệu
 
-Từ **2.0.3 lên 2.0.4**, dữ liệu giữ **schema 2**, không có bước chuyển đổi lại. Công việc, ghi chú, lịch và cài đặt vẫn nằm trong cơ sở dữ liệu hiện có.
+Từ **2.0.3–2.0.4 lên 2.0.5**, dữ liệu giữ **schema 2**, không có bước chuyển đổi lại. Công việc, ghi chú, lịch và cài đặt vẫn nằm trong cơ sở dữ liệu hiện có.
 
-Từ **2.0.0–2.0.2 lên 2.0.4**, lần mở đầu kiểm tra và giữ bản `tasks.pre-upgrade-<ngày-giờ>.db` cùng thư mục rồi nâng cấp schema 1 lên schema 2 để thêm ghi chú. Sau nâng cấp, dùng 2.0.3 trở lên với dữ liệu đó; các bản 2.0.2 trở về trước không đọc schema 2.
+Từ **2.0.0–2.0.2 lên 2.0.5**, lần mở đầu kiểm tra và giữ bản `tasks.pre-upgrade-<ngày-giờ>.db` cùng thư mục rồi nâng cấp schema 1 lên schema 2 để thêm ghi chú. Sau nâng cấp, dùng 2.0.3 trở lên với dữ liệu đó; các bản 2.0.2 trở về trước không đọc schema 2.
+
+Để đưa dữ liệu từ một tệp sao lưu vào bản mới, dùng Dữ liệu và báo cáo → Khôi phục dữ liệu sau khi mở ứng dụng. Chọn tệp `.db` trên máy, kiểm tra thông báo thay thế và xác nhận; bản dự phòng hiện tại được giữ trước khi nạp. Cài đè chương trình tiếp tục dùng dữ liệu đang có, không tự lấy một tệp sao lưu khác. Xem [hướng dẫn sao lưu và khôi phục](huong-dan.md#sao-lưu-và-khôi-phục).

@@ -25,7 +25,7 @@ def run_self_test(*, gui=False):
             store.set_task_status(task.id, "in_progress")
             assert len(store.list_tasks(status="active")) == 2
             assert len(store.list_tasks(status="todo")) == 1
-            checks.append("SQLite CRUD, unique codes and both task filters")
+            checks.append("SQLite CRUD, unique codes and unfinished task status queries")
             assert store.get_task(task.id).notes == note
             assert [t.id for t in store.list_tasks(date_from=date(2026, 10, 25), date_to=date(2026, 10, 25))] == [task.id]
             checks.append("Unicode task notes and calendar deadline date lookup")
@@ -74,7 +74,25 @@ def run_self_test(*, gui=False):
                     root.report_callback_exception = lambda *args: errors.append(str(args[1]))
                     root.deiconify()
                     root.update()
-                    assert len(app.pages["active"].visible_tasks) == 2
+                    page = app.pages["active"]
+                    assert page.layout_mode == "grid"
+                    expected_tasks = [(t.id, t.status, t.notes) for t in store.list_tasks(status="active")]
+                    assert len(expected_tasks) == 2
+                    for layout in ("grid", "list", "wide", "grid"):
+                        page.set_layout(layout)
+                        root.update()
+                        assert page.layout_mode == layout
+                        assert [(t.id, t.status, t.notes) for t in page.visible_tasks] == expected_tasks
+                        assert [(t.id, t.status, t.notes) for t in page.cards.visible_tasks] == expected_tasks
+                        assert set(page.cards_by_id) == {t[0] for t in expected_tasks}
+                    assert not any(hasattr(page, name) for name in ("filters", "count_label", "hint"))
+                    assert app.focus_search() == "break"
+                    root.update()
+                    assert page._search_window.winfo_exists()
+                    assert page.search_entry.winfo_ismapped()
+                    page._search_window.destroy()
+                    assert [(t.id, t.status, t.notes) for t in store.list_tasks(status="active")] == expected_tasks
+                    checks.append("Grid default and list/wide task layouts preserve records; Ctrl+F opens a separate search window")
                     app.show_page("calendar")
                     calendar = app.pages["calendar"]
                     calendar.anchor = calendar.selected_date = date(2026, 10, 25)

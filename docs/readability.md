@@ -1,4 +1,4 @@
-# Chữ hiển thị và nâng cấp 2.0.4
+# Chữ hiển thị và nâng cấp 2.0.5
 
 ## Vì sao chữ có thể mờ
 
@@ -10,18 +10,22 @@ Manifest trong chính EXE ứng dụng lấy từ bộ cài 2.0.2 đã phát hà
 
 Bản 2.0.3 giữ cách nhận biết DPI và font này, đồng thời thêm lịch theo deadline và ghi chú. Kết quả EXE 2.0.3 được ghi riêng trong [phạm vi kiểm tra](kiem-thu.md), không suy ra từ kết quả của 2.0.2.
 
+Bản 2.0.5 giữ cách nhận biết DPI và cỡ chữ này, bổ sung Lưới/Danh sách/Rộng với thẻ và nút tự sắp xếp theo chỗ trống. Khối lọc cũ đã được bỏ; tìm kiếm mở riêng bằng Ctrl+F. Kết quả Windows của 2.0.5 đang chờ xác nhận, xem [phạm vi kiểm tra](kiem-thu.md).
+
 Ứng dụng giữ tỷ lệ hiển thị Windows mà người dùng đã chọn. Bản sửa không thay đổi độ phân giải, thiết lập Scale, ClearType hay cấu hình hiển thị của hệ thống.
 
-## Cài nâng cấp lên 2.0.4
+## Cài nâng cấp lên 2.0.5
 
 1. Trong ứng dụng đang dùng, tạo bản Sao lưu dữ liệu. Ở 2.0.1, mở Dữ liệu và báo cáo → Sao lưu dữ liệu.
 2. Chọn Thoát hẳn ứng dụng hoặc Thoát hẳn từ menu khay. Dấu X chỉ thu nhỏ cửa sổ và vẫn để ứng dụng chạy nền.
-3. Tải [bộ cài 2.0.4](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/download/windows-2.0.4-preview.1/NhacViecAnhHa-Setup-2.0.4-x64.exe) và [SHA256SUMS.txt](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/download/windows-2.0.4-preview.1/SHA256SUMS.txt) của cùng bản phát hành. Chạy bộ cài vào vị trí cài đặt hiện tại.
-4. Mở lại ứng dụng và kiểm tra số phiên bản 2.0.4 ở thanh dưới cùng. Việc khởi động lại giúp cửa sổ nhận chế độ DPI mới từ đầu.
+3. Sau khi 2.0.5 được xác nhận phát hành, tải [bộ cài 2.0.5](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/download/windows-2.0.5-preview.1/NhacViecAnhHa-Setup-2.0.5-x64.exe) và [SHA256SUMS.txt](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/download/windows-2.0.5-preview.1/SHA256SUMS.txt) của cùng bản phát hành. Chạy bộ cài vào vị trí cài đặt hiện tại.
+4. Mở lại ứng dụng và kiểm tra số phiên bản 2.0.5 ở thanh dưới cùng. Việc khởi động lại giúp cửa sổ nhận chế độ DPI mới từ đầu.
 
-Dữ liệu vẫn dùng `%USERPROFILE%\NhacViecAnhHaMoi\data\tasks.db`. Từ 2.0.3 lên 2.0.4 giữ schema 2, không nâng cấp lại dữ liệu. Nếu nâng cấp từ 2.0.0–2.0.2, lần mở đầu kiểm tra dữ liệu, giữ bản `tasks.pre-upgrade-<ngày-giờ>.db` cùng thư mục và nâng cấp schema 1 lên schema 2 để thêm ghi chú. Không cần xóa, nhập lại hoặc khôi phục công việc. Sau nâng cấp, tiếp tục dùng 2.0.3 trở lên; bản 2.0.2 trở về trước không đọc schema 2. Dữ liệu gốc 1.7.0 vẫn nằm riêng và chưa được tự động chuyển vào bản mới.
+Dữ liệu vẫn dùng `%USERPROFILE%\NhacViecAnhHaMoi\data\tasks.db`. Từ 2.0.3–2.0.4 lên 2.0.5 giữ schema 2, không nâng cấp lại dữ liệu. Nếu nâng cấp từ 2.0.0–2.0.2, lần mở đầu kiểm tra dữ liệu, giữ bản `tasks.pre-upgrade-<ngày-giờ>.db` cùng thư mục và nâng cấp schema 1 lên schema 2 để thêm ghi chú. Không cần xóa, nhập lại hoặc khôi phục công việc. Sau nâng cấp, tiếp tục dùng 2.0.3 trở lên; bản 2.0.2 trở về trước không đọc schema 2. Dữ liệu gốc 1.7.0 vẫn nằm riêng và chưa được tự động chuyển vào bản mới.
 
 ## Phạm vi xác nhận DPI
+
+2.0.5 chưa có kết quả Windows EXE trong lần cập nhật này. Các bằng chứng dưới đây thuộc đúng các bản lịch sử, không xác nhận bố cục ba kiểu xem mới.
 
 2.0.4 giữ phần DPI của 2.0.3 và đã đạt [lần dựng Windows 40293108356](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/actions/runs/40293108356), gồm tự kiểm tra EXE/GUI và 64 kiểm tra bố cục/65 PNG. Pha native của EXE đóng gói ghi DPI thực của cửa sổ là 96 và cả tiến trình/cửa sổ đều PerMonitorV2. Kết quả và bằng chứng nâng cấp được ghi riêng trong [kết quả kiểm tra](kiem-thu.md). Nếu bộ cài báo lỗi ghi tệp, dùng [hướng dẫn cài đặt](cai-dat.md).
 

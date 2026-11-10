@@ -1,11 +1,11 @@
 # Phạm vi dựng lại mã nguồn
 
-Nguồn tham khảo là tài liệu PDF 14 trang, README và cấu trúc bộ cài 1.7.0 đã cung cấp, cùng các yêu cầu bổ sung về lịch tháng/năm, hai cách lọc công việc, tổng việc theo deadline trong lịch và ghi chú từng việc. Mã nguồn mới không giải biên dịch để tuyên bố khôi phục mã dự án gốc, không kèm dữ liệu cá nhân và không tự chạy bộ cài đã tải lên.
+Nguồn tham khảo là tài liệu PDF 14 trang, README và cấu trúc bộ cài 1.7.0 đã cung cấp, cùng các yêu cầu bổ sung về lịch tháng/năm, tổng việc theo deadline, ghi chú từng việc và ba kiểu xem công việc. Bản 2.0.5 thay khối lọc công việc trước đây bằng Lưới/Danh sách/Rộng. Mã nguồn mới không giải biên dịch để tuyên bố khôi phục mã dự án gốc, không kèm dữ liệu cá nhân và không tự chạy bộ cài đã tải lên.
 
 ## Nghiệp vụ được xây dựng
 
-- Công việc: tạo/sửa, deadline, phân loại, nội dung/yêu cầu, ghi chú riêng, mã tự động, bắt đầu/tạm dừng/hoàn thành/hủy/mở lại, tìm kiếm và lọc.
-- Hai phạm vi Cần làm: toàn bộ chưa hoàn thành và nhóm Cần làm hiện tại.
+- Công việc: tạo/sửa, deadline, phân loại, nội dung/yêu cầu, ghi chú riêng, mã tự động, bắt đầu/tạm dừng/hoàn thành/hủy/mở lại và tìm kiếm theo tên/mã bằng cửa sổ Ctrl+F.
+- Cách xem: Lưới mặc định, Danh sách gọn, Rộng; tự đổi số cột theo chỗ trống, giữ cùng dữ liệu khi đổi kiểu. Việc cần làm hiển thị toàn bộ chưa hoàn thành, các trang trạng thái giữ riêng.
 - Lịch: xem tuần/tháng/năm; tổng hợp công việc theo ngày deadline, mở thẻ việc trong ngày giống danh sách công việc, tách lịch hẹn; một lần, hằng tuần/tháng/năm; giới hạn chu kỳ, xử lý ngày thiếu, kết quả từng lần, nhắc và hoãn.
 - Nhắc việc: thiết lập giờ/ngày trước deadline, nhắc gấp, các mốc lịch, dấu chống trùng được lưu trong SQLite.
 - Excel: toàn bộ công việc, buổi lịch theo khoảng và định nghĩa lịch; cột ghi chú, bảng có tên cho PivotTable.
@@ -24,7 +24,7 @@ Nguồn tham khảo là tài liệu PDF 14 trang, README và cấu trúc bộ c�
 ## Các kiểm tra bắt buộc trước phát hành
 
 1. Bộ kiểm thử nghiệp vụ chạy đủ, không coi zero-test là thành công.
-2. Tạo/sửa/chuyển trạng thái và các bộ lọc trên cơ sở dữ liệu trống; mã trùng phút vẫn riêng biệt.
+2. Tạo/sửa/chuyển trạng thái, ba kiểu xem và tìm kiếm Ctrl+F trên cơ sở dữ liệu trống; mã trùng phút vẫn riêng biệt. Lưới là mặc định; đổi kiểu không đổi công việc hay ghi chú; vùng bộ lọc cũ không chiếm diện tích.
 3. Tổng công việc theo ngày khớp deadline và danh sách ngày, đổi deadline không trùng; ghi chú đúng công việc, nhiều dòng có dấu được giữ. Lịch qua cuối tháng, tháng thiếu ngày, năm nhuận và giới hạn lặp; đánh dấu một buổi không dừng chu kỳ.
 4. Thông báo không trùng sau khởi động lại, không nhắc lịch đã hết giờ, hoãn không vượt giờ kết thúc.
 5. Excel mở được và chứa đủ dữ liệu và ghi chú; sao lưu/khôi phục nhất quán, từ chối cơ sở dữ liệu không đúng schema.

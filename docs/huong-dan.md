@@ -1,6 +1,6 @@
 # Hướng dẫn sử dụng bản dựng mới
 
-Phiên bản hiện tại: 2.0.4; bộ cài đã được kiểm tra và phát hành. Giao diện công việc/lịch/ghi chú từ 2.0.3 được giữ lại. Xem [bố cục, phím tắt và cách nâng cấp từ 2.0.x](giao-dien.md), cùng [thay đổi về DPI và chữ hiển thị](readability.md).
+Mã nguồn hiện tại: 2.0.5; bộ cài Windows đang chờ dựng và kiểm tra. Bản này bỏ khối bộ lọc cũ và thêm ba kiểu xem công việc, mặc định Lưới. Xem [bố cục, phím tắt và cách nâng cấp từ 2.0.x](giao-dien.md), cùng [thay đổi về DPI và chữ hiển thị](readability.md).
 
 ## Bắt đầu
 
@@ -10,14 +10,11 @@ Mở ứng dụng sau khi chạy mã nguồn hoặc cài bộ cài Windows. Lầ
 
 Nhập tên, deadline theo `dd/mm/yyyy` và giờ `hh:mm`. Phân loại, nội dung, yêu cầu và ghi chú là thông tin bổ sung. Mã công việc được tạo tự động và khác deadline.
 
-Ở mục Việc cần làm, dùng hai lựa chọn:
+Mục Việc cần làm luôn gồm Cần làm và Đang thực hiện, có cả việc tạm dừng, mở lại hoặc quá hạn. Đã hoàn thành và Đã hủy được lưu ở các trang tương ứng.
 
-| Lựa chọn | Phạm vi |
-| --- | --- |
-| Tất cả việc chưa hoàn thành | Cần làm và Đang thực hiện; có cả việc quá hạn |
-| Chưa bắt đầu | Cần làm, bao gồm việc đã tạm dừng hoặc được mở lại |
+Chọn **Lưới**, **Danh sách** hoặc **Rộng** ngay trên các thẻ. Lưới là mặc định khi mở ứng dụng; Danh sách dùng hàng gọn, Rộng dùng thẻ hết chiều ngang. Lưới tự đổi số cột theo chỗ trống. Kiểu xem đang chọn được dùng chung khi chuyển trang trong phiên; lần mở mới bắt đầu ở Lưới. Tiêu đề, ba ô thống kê và nút Tạo công việc vẫn ở trên, còn khối lọc/tìm kiếm/đếm cũ đã được bỏ.
 
-Bắt đầu chuyển việc sang Đang thực hiện. Tạm dừng đưa về Cần làm. Hoàn thành và Hủy chuyển sang danh sách tương ứng và dừng nhắc. Mở lại đưa về Cần làm. Tìm theo tên/mã; chọn Bộ lọc + để mở sắp xếp và khoảng ngày khi cần.
+Bắt đầu chuyển việc sang Đang thực hiện. Tạm dừng đưa về Cần làm. Hoàn thành và Hủy chuyển sang danh sách tương ứng và dừng nhắc. Mở lại đưa về Cần làm. Nhấn **Ctrl+F** để tìm theo tên/mã trong cửa sổ riêng; chọn Tìm hoặc nhấn Enter. Xóa tìm kiếm đưa về toàn bộ nhóm. Dòng mô tả dưới tiêu đề cho biết từ khóa nếu đang tìm.
 
 ## Ghi chú công việc
 
@@ -27,7 +24,7 @@ Mỗi việc có ô Ghi chú riêng trong Chi tiết. Anh có thể ghi tiến �
 
 Chọn Tuần, Tháng hoặc Năm để xem cùng dữ liệu. Công việc được tự tổng hợp vào **ngày deadline**, độc lập với ngày tạo và không cần Thêm lịch. Mỗi ngày ghi số việc riêng với số lịch hẹn. Số việc gồm mọi trạng thái, kể cả đã hoàn thành và đã hủy; trạng thái được ghi rõ trên thẻ và một việc chỉ được tính một lần.
 
-Bấm ngày để xem tab Công việc phía dưới với cùng thông tin và thao tác như Việc cần làm. Tạo công việc trong lịch điền sẵn ngày deadline đang chọn; kiểm tra hoặc sửa ngày/giờ rồi lưu. Đổi deadline trong Chi tiết sẽ chuyển việc sang ngày mới; Bắt đầu, Hoàn thành, Mở lại hoặc lưu Ghi chú cập nhật chính công việc đang có. Chế độ Năm có 12 ô tháng với tổng công việc/lịch hẹn; bấm ô tháng để mở lịch Tháng, rồi chọn ngày. Khi chiều cao cửa sổ thấp, phần lưới lịch thu gọn khoảng cách; nếu vẫn không đủ chỗ, anh có thể cuộn lưới lịch để xem các ngày, trong khi phần công việc ngày được chọn vẫn có vùng riêng phía dưới.
+Bấm ngày để xem tab Công việc phía dưới với cùng thông tin và thao tác như Việc cần làm, trình bày bằng thẻ Rộng. Tạo công việc trong lịch điền sẵn ngày deadline đang chọn; kiểm tra hoặc sửa ngày/giờ rồi lưu. Đổi deadline trong Chi tiết sẽ chuyển việc sang ngày mới; Bắt đầu, Hoàn thành, Mở lại hoặc lưu Ghi chú cập nhật chính công việc đang có. Chế độ Năm có 12 ô tháng với tổng công việc/lịch hẹn; bấm ô tháng để mở lịch Tháng, rồi chọn ngày. Khi chiều cao cửa sổ thấp, phần lưới lịch thu gọn khoảng cách; nếu vẫn không đủ chỗ, anh có thể cuộn lưới lịch để xem các ngày, trong khi phần công việc ngày được chọn vẫn có vùng riêng phía dưới.
 
 Tab Lịch hẹn hiển thị các buổi diễn ra, giữ riêng với công việc đến hạn. Thêm lịch tạo lịch với tên, ngày bắt đầu, giờ bắt đầu/kết thúc, phân loại và nội dung. Giờ kết thúc phải sau giờ bắt đầu trong cùng ngày.
 
@@ -54,13 +51,22 @@ Mở Dữ liệu và báo cáo → Xuất báo cáo Excel. Chọn khoảng ngày
 
 ## Sao lưu và khôi phục
 
-Mở Dữ liệu và báo cáo → Sao lưu dữ liệu để tạo bản sao SQLite nhất quán. Giữ nhiều bản có ngày tháng tại nơi an toàn. Khôi phục dữ liệu trong cùng menu chỉ nhận bản sao lưu của bản dựng mới, thay thế toàn bộ dữ liệu và giữ một bản sao trước khi thay thế. Bản 2.0.3 nhận bản sao hợp lệ schema 1 (2.0.0–2.0.2) và schema 2. Bản schema 1 được kiểm tra và nâng cấp trên tệp tạm; bản sao nguồn không bị thay đổi. Không dùng chức năng này để nạp cơ sở dữ liệu 1.7.0 chưa được xác nhận tương thích.
+Mở Dữ liệu và báo cáo → Sao lưu dữ liệu để tạo bản sao SQLite nhất quán. Giữ nhiều bản có ngày tháng tại nơi an toàn. Khôi phục dữ liệu trong cùng menu chỉ nhận bản sao lưu của bản dựng mới, thay thế toàn bộ dữ liệu và giữ một bản sao trước khi thay thế. Bản 2.0.5 nhận bản sao hợp lệ schema 1 (2.0.0–2.0.2) và schema 2 (từ 2.0.3). Bản schema 1 được kiểm tra và nâng cấp trên tệp tạm; bản sao nguồn không bị thay đổi. Không dùng chức năng này để nạp cơ sở dữ liệu 1.7.0 chưa được xác nhận tương thích.
+
+Để cập nhật dữ liệu từ bản sao lưu đang có:
+
+1. Giữ tệp `.db` gốc tại nơi dễ tìm trên máy.
+2. Mở Dữ liệu và báo cáo → Khôi phục dữ liệu, chọn đúng tệp sao lưu.
+3. Đọc thông báo thay thế toàn bộ dữ liệu rồi xác nhận. Ứng dụng giữ một bản dự phòng trước khi thay thế và không sửa tệp nguồn.
+4. Kiểm tra các trang Việc cần làm, Đã hoàn thành và Lịch để đối chiếu dữ liệu vừa nạp.
+
+Bộ cài chung không kèm cơ sở dữ liệu riêng của người dùng. Cài đè chương trình tiếp tục dùng dữ liệu hiện tại; muốn chuyển về một thời điểm sao lưu thì dùng Khôi phục dữ liệu.
 
 Khi sao chép thủ công, Thoát hẳn rồi mới chép `tasks.db` trong `%USERPROFILE%\NhacViecAnhHaMoi\data`. Dữ liệu không đồng bộ giữa các máy; mỗi tài khoản có cơ sở dữ liệu riêng.
 
-## Nâng cấp lên 2.0.4
+## Nâng cấp lên 2.0.5
 
-Lưu công việc/ghi chú đang sửa, sao lưu, Thoát hẳn ứng dụng rồi cài 2.0.4 vào vị trí hiện tại. Từ 2.0.3 lên 2.0.4 tiếp tục dùng schema 2 và không nâng cấp lại dữ liệu. Với 2.0.0–2.0.2: Lần mở đầu kiểm tra cơ sở dữ liệu, giữ bản `tasks.pre-upgrade-<ngày-giờ>.db` trong thư mục dữ liệu, rồi thêm ghi chú bằng nâng cấp schema 2. Công việc, lịch, lịch sử và cài đặt được giữ lại; ghi chú của việc cũ bắt đầu trống. Tiếp tục dùng 2.0.3 trở lên với dữ liệu đã nâng cấp; bản 2.0.2 trở về trước không đọc schema 2.
+Sau khi bản 2.0.5 được xác nhận phát hành, lưu công việc/ghi chú đang sửa, sao lưu, Thoát hẳn ứng dụng rồi cài vào vị trí hiện tại. Từ 2.0.3–2.0.4 lên 2.0.5 tiếp tục dùng schema 2 và không nâng cấp lại dữ liệu. Với 2.0.0–2.0.2: lần mở đầu kiểm tra cơ sở dữ liệu, giữ bản `tasks.pre-upgrade-<ngày-giờ>.db` trong thư mục dữ liệu, rồi thêm ghi chú bằng nâng cấp schema 2. Công việc, lịch, lịch sử và cài đặt được giữ lại; ghi chú của việc cũ bắt đầu trống. Tiếp tục dùng 2.0.3 trở lên với dữ liệu đã nâng cấp; bản 2.0.2 trở về trước không đọc schema 2.
 
 Nếu cài không ghi được `_sqlite3.pyd` hoặc tệp khác, xem [hướng dẫn cài đặt và xử lý lỗi](cai-dat.md).
 

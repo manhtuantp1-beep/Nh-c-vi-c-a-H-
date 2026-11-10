@@ -4,7 +4,7 @@
 !include "x64.nsh"
 
 !ifndef APP_VERSION
-  !define APP_VERSION "2.0.4"
+  !define APP_VERSION "2.0.5"
 !endif
 !ifndef SOURCE_DIR
   !error "Pass /DSOURCE_DIR=<absolute path to dist\NhacViecAnhHa>"
@@ -30,7 +30,7 @@ ShowUninstDetails show
 ; A skipped runtime DLL would leave a mixed, unusable installation.
 AllowSkipFiles off
 BrandingText "Nhắc việc anh Hà · Mã nguồn dựng mới ${APP_VERSION}"
-VIProductVersion "2.0.4.0"
+VIProductVersion "2.0.5.0"
 VIAddVersionKey "ProductName" "${APP_NAME}"
 VIAddVersionKey "ProductVersion" "${APP_VERSION}"
 VIAddVersionKey "FileVersion" "${APP_VERSION}"

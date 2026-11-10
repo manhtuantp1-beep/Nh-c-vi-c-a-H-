@@ -6,7 +6,7 @@ import tkinter as tk
 import unittest
 from unittest.mock import patch
 
-from nhacviec.app import NhacViecApp, ALL_FILTER, TODO_FILTER, TaskDialog
+from nhacviec.app import NhacViecApp, TaskDialog
 from nhacviec.storage import Storage
 
 
@@ -36,42 +36,70 @@ class DesktopTests(unittest.TestCase):
             self.directory.cleanup()
             self.assertEqual(self.callback_errors, [])
 
-    def test_two_filters_preserve_pending_and_exclude_closed(self):
+    def test_active_page_omits_removed_panel_and_defaults_to_grid(self):
         page = self.app.pages["active"]
-        self.assertEqual(len(page.visible_tasks), 4)
-        page.filter_combo.current(1)
-        page.filter_combo.event_generate("<<ComboboxSelected>>")
-        self.root.update()
-        self.assertEqual({t.title for t in page.visible_tasks}, {"Việc mới", "Đã tạm dừng", "Đã mở lại"})
-        self.assertIn("tạm dừng", page.hint.cget("text"))
+        self.assertEqual({task.title for task in page.visible_tasks},
+                         {"Việc mới", "Đang làm", "Đã tạm dừng", "Đã mở lại"})
+        self.assertEqual(page.layout_mode, "grid")
+        self.assertEqual(page.cards.layout_mode, "grid")
+        for name in ("filters", "filter_combo", "advanced_button", "count_label", "hint", "list_note"):
+            self.assertFalse(hasattr(page, name), name)
+        self.assertEqual(set(page.layout_buttons), {"grid", "list", "wide"})
+        self.assertTrue(page.metrics.winfo_ismapped())
 
-    def test_start_button_updates_filter_and_database(self):
+    def test_start_button_updates_task_and_keeps_it_in_active(self):
         page = self.app.pages["active"]
-        page.filter_var.set(TODO_FILTER)
-        page.refresh()
         task_id = self.tasks[0].id
         card = page.cards_by_id[task_id]
-        buttons = [grandchild for child in card.winfo_children() for grandchild in child.winfo_children() if grandchild.winfo_class() == "TButton"]
-        next(b for b in buttons if b.cget("text") == "Bắt đầu").invoke()
+        buttons = [grandchild for child in card.winfo_children() for grandchild in child.winfo_children()
+                   if grandchild.winfo_class() == "TButton"]
+        next(button for button in buttons if button.cget("text") == "Bắt đầu").invoke()
         self.root.update()
         self.assertEqual(self.store.get_task(task_id).status, "in_progress")
-        self.assertNotIn(task_id, {t.id for t in page.visible_tasks})
-        self.assertEqual(page.filter_var.get(), TODO_FILTER)
-        page.filter_var.set(ALL_FILTER)
-        page.refresh()
+        self.assertIn(task_id, {task.id for task in page.visible_tasks})
         self.assertEqual(len(page.visible_tasks), 4)
+        self.assertEqual(page.metric_labels["in_progress"].cget("text"), "2")
+        self.assertEqual(page.layout_mode, "grid")
 
-    def test_search_sort_and_tab_filter_state(self):
+    def test_three_layout_choices_preserve_task_scope_and_follow_navigation(self):
         page = self.app.pages["active"]
-        page.query_var.set("mới")
-        page.apply_filters()
-        self.assertEqual([t.title for t in page.visible_tasks], ["Việc mới"])
+        initial_ids = [task.id for task in page.visible_tasks]
+        for mode in ("list", "wide", "grid"):
+            with self.subTest(mode=mode):
+                page.layout_buttons[mode].invoke()
+                self.root.update()
+                self.assertEqual(page.layout_mode, mode)
+                self.assertEqual(page.cards.layout_mode, mode)
+                self.assertEqual([task.id for task in page.visible_tasks], initial_ids)
+                self.assertEqual(set(page.cards_by_id), set(initial_ids))
+                self.app.show_page("completed")
+                self.assertEqual(self.app.pages["completed"].layout_mode, mode)
+                self.assertEqual(len(self.app.pages["completed"].visible_tasks), 1)
+                self.app.show_page("active")
+                self.assertEqual(page.layout_mode, mode)
+        self.assertEqual(len(self.store.list_tasks()), 6)
+
+    def test_search_popup_and_tab_state_without_filter_panel(self):
+        page = self.app.pages["active"]
+        self.assertFalse(hasattr(page, "search_entry"))
+        self.app.focus_search()
+        popup = page._search_window
+        self.root.update()
+        page.search_entry.insert(0, "mới")
+        # Xvfb has no window manager to grant focus to a new transient window.
+        # Focus the real entry before simulating the user's Enter key.
+        page.search_entry.focus_force()
+        self.root.update()
+        page.search_entry.event_generate("<Return>")
+        self.root.update()
+        self.assertEqual([task.title for task in page.visible_tasks], ["Việc mới"])
+        self.assertIn("Đang tìm: mới", page.subtitle.cget("text"))
         self.app.show_page("completed")
-        self.assertEqual(len(self.app.pages["completed"].visible_tasks), 1)
         self.app.show_page("active")
         self.assertEqual(page.query_var.get(), "mới")
         page.clear_filters()
         self.assertEqual(len(page.visible_tasks), 4)
+        self.assertNotIn("Đang tìm:", page.subtitle.cget("text"))
 
     def test_task_form_saves_full_unicode_text(self):
         dialog = TaskDialog(self.app)

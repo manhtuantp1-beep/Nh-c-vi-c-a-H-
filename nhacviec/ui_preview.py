@@ -354,20 +354,38 @@ def capture(window, target: Path, records):
         picture.close()
 
 
-def check_task_controls(page, root, checks, context, *, advanced=False):
-    require_visible(page.search_entry, page.filters, f"{context}: search field")
-    require_visible(page.filter_combo, page.filters, f"{context}: task filter")
-    require_visible(page.advanced_button, page.filters, f"{context}: advanced-filter toggle", natural_width=True)
-    require_visible(page.filters, root, f"{context}: filter panel")
-    buttons = [w for w in descendants(page.filters) if isinstance(w, ttk.Button) and w.winfo_ismapped()]
-    for button in buttons:
-        require_visible(button, page.filters, f"{context}: filter button {button.cget('text')}", natural_width=True)
-    if advanced:
-        for field in (page.date_from, page.date_to):
-            require_visible(field, page.filters, f"{context}: date filter")
-    if page.canvas.winfo_height() < 100:
-        raise AssertionError(f"{context}: task list has less than 100px of usable height")
-    checks.append(f"{context}: search/filter controls fit; task list remains visible")
+def task_state(tasks):
+    """Identify the same saved records after a purely visual layout change."""
+    return [(task.id, task.status, task.notes) for task in tasks]
+
+
+def check_task_layout(page, root, checks, context, expected_tasks, *, viewport_factor):
+    # The area removed at the user's request must not return as a hidden,
+    # space-consuming frame when the presentation mode changes.
+    for removed in ("filters", "filter_combo", "advanced_button", "count_label", "list_note", "hint"):
+        if hasattr(page, removed):
+            raise AssertionError(f"{context}: removed task control still exists: {removed}")
+    require_visible(page.layout_selector, root, f"{context}: layout selector")
+    for button in page.layout_buttons.values():
+        require_visible(button, page.layout_selector, f"{context}: layout choice {button.cget('text')}", natural_width=True)
+    if page.canvas.winfo_height() <= round(100 * viewport_factor):
+        raise AssertionError(f"{context}: task list has less than 100 logical pixels of usable height")
+    require_visible(page.canvas, root, f"{context}: task list")
+    if task_state(page.visible_tasks) != expected_tasks or task_state(page.cards.visible_tasks) != expected_tasks:
+        raise AssertionError(f"{context}: switching layouts changed task identities, states or notes")
+    if set(page.cards_by_id) != {task[0] for task in expected_tasks}:
+        raise AssertionError(f"{context}: rendered cards do not match the task list")
+    for card in page.cards_by_id.values():
+        for control in descendants(card):
+            if isinstance(control, (ttk.Button, ttk.Menubutton)):
+                require_visible(control, card, f"{context}: task action {control.cget('text')}", natural_width=True)
+        for label in getattr(card, "wrapping_labels", []):
+            require_visible(label, card, f"{context}: task text", natural_width=True)
+            if label.winfo_height() + 1 < label.winfo_reqheight():
+                raise AssertionError(f"{context}: wrapped task text is clipped vertically")
+    if page.layout_mode in ("list", "wide") and page.cards.columns != 1:
+        raise AssertionError(f"{context}: row layout did not use one column")
+    checks.append(f"{context}: layout choices and task actions fit; saved tasks and notes match")
 
 
 def capture_phase(store, data_dir, output, report, today, task_id, *, target_dpi=None):
@@ -380,6 +398,9 @@ def capture_phase(store, data_dir, output, report, today, task_id, *, target_dpi
         app = NhacViecApp(root, store, data_dir, integrations=False, enable_timers=False,
                           font_scale_override=font_scale)
         settle(root)
+        if app.pages["active"].layout_mode != "grid":
+            raise AssertionError("A fresh task page did not default to grid layout")
+        expected_tasks = task_state(store.list_tasks(status="active"))
         display_state = get_display_state(root)
         if target_dpi is None:
             report["display_state"] = display_state
@@ -419,16 +440,15 @@ def capture_phase(store, data_dir, output, report, today, task_id, *, target_dpi
             for key, button in app.nav_buttons.items():
                 require_visible(button, app.sidebar, f"{context}: sidebar {key}", natural_width=True)
             page = app.pages["active"]
-            if page._advanced_open:
-                page.toggle_advanced()
+            for layout in ("grid", "list", "wide"):
+                page.set_layout(layout)
                 settle(root)
-            check_task_controls(page, root, report["checks"], context)
-            capture(root, output / f"tasks-{context}.png", report["screenshots"])
-            page.toggle_advanced()
-            settle(root)
-            check_task_controls(page, root, report["checks"], context + " advanced", advanced=True)
-            capture(root, output / f"tasks-filters-{context}.png", report["screenshots"])
-            page.toggle_advanced()
+                check_task_layout(page, root, report["checks"], f"{context} {layout}", expected_tasks,
+                                  viewport_factor=viewport_factor)
+                prefix = "tasks" if layout == "grid" else f"tasks-{layout}"
+                capture(root, output / f"{prefix}-{context}.png", report["screenshots"])
+            if task_state(store.list_tasks(status="active")) != expected_tasks:
+                raise AssertionError(f"{context}: visual layout selection changed stored tasks")
             app.show_page("calendar")
             view = app.pages["calendar"]
             view.anchor = view.selected_date = today
@@ -513,6 +533,7 @@ def main(argv=None):
               "frozen": bool(getattr(sys, "frozen", False)),
               "executable": Path(sys.executable).name,
               "display_awareness": asdict(display_status),
+              "default_task_layout": "grid", "task_layouts": ["grid", "list", "wide"],
               "data": "synthetic, temporary SQLite database", "scaling": [],
               "checks": [], "screenshots": []}
     result = 1

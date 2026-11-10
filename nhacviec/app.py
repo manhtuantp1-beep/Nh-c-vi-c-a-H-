@@ -154,8 +154,7 @@ class NhacViecApp:
     def focus_search(self, _event=None):
         page = self.pages.get(self.current_page)
         if isinstance(page, TaskListPage):
-            page.search_entry.focus_set()
-            page.search_entry.selection_range(0, "end")
+            page.open_search()
             return "break"
 
     def new_task(self):

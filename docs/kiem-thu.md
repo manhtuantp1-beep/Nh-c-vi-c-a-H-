@@ -1,6 +1,25 @@
 # Kết quả kiểm tra mã nguồn và bộ cài
 
-## Bản 2.0.4 — kiểm tra khóa tệp trước khi cập nhật
+## Bản 2.0.5 — Lưới, Danh sách và Rộng
+
+Trạng thái: đang tích hợp và kiểm tra mã nguồn. Chưa chạy lần dựng Windows hoặc xác nhận EXE, cài/gỡ, kích thước hay SHA256 của bộ cài 2.0.5. Môi trường hiện trả lỗi Forbidden khi truy cập GitHub API; kết quả các bản trước không được dùng làm bằng chứng cho 2.0.5.
+
+Phạm vi cần kiểm tra:
+
+- Khối Hiển thị/Tìm công việc/Bộ lọc và hàng đếm, ghi chú dưới khối đó đã được bỏ; tiêu đề, ba ô thống kê và nút tạo việc vẫn hiển thị.
+- Trang mới mặc định Lưới; đổi Lưới/Danh sách/Rộng giữ đúng ID, trạng thái, nội dung và ghi chú. Kiểu xem được dùng chung giữa các trang công việc trong phiên hiện tại.
+- Việc cần làm gồm mọi việc chưa hoàn thành; thao tác trạng thái cập nhật chính bản ghi. Ctrl+F mở cửa sổ tìm riêng và có thể xóa tìm kiếm để trở về toàn bộ nhóm.
+- Chữ dài có dấu, nút thao tác và thẻ không bị cắt khi đổi kích thước hoặc tăng cỡ chữ. Lưới tự đổi số cột; Danh sách/Rộng dùng một cột.
+- Lịch theo deadline tiếp tục dùng thẻ Rộng, các thao tác ghi chú/lịch, Excel, sao lưu/khôi phục và bảo vệ dữ liệu cũ vẫn hoạt động.
+- Dữ liệu sao lưu được kiểm tra và khôi phục trên bản sao riêng; không đưa cơ sở dữ liệu hoặc nội dung cá nhân vào mã nguồn, dữ liệu minh họa hay ảnh kiểm tra công khai.
+
+Các kiểm tra công khai dùng dữ liệu tổng hợp tạm thời. Với một bản sao lưu của người dùng, cần đối chiếu cấu trúc và toàn bộ bản ghi sau khôi phục, xác nhận tệp nguồn không bị thay đổi và giữ bản trước khôi phục. Báo cáo riêng không nằm trong kho mã nguồn.
+
+Kế hoạch Windows giữ kiểm tra EXE/GUI/PerMonitorV2, ảnh theo các kiểu xem và các pha Tk, cài/gỡ, cùng kiểm tra khóa tệp từ bộ cài 2.0.3 đã phát hành. Số kiểm thử, kết quả chụp ảnh và mã nguồn đã kiểm thử của 2.0.5 sẽ được ghi sau khi chạy xong; không coi cấu hình workflow là kết quả đạt.
+
+Liên kết dự kiến: [bản phát hành 2.0.5](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/tag/windows-2.0.5-preview.1), [Lưới](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/download/windows-2.0.5-preview.1/tasks-1366x768.png), [Danh sách](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/download/windows-2.0.5-preview.1/tasks-list-1366x768.png), [Rộng](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/download/windows-2.0.5-preview.1/tasks-wide-1366x768.png). Chưa xác nhận các liên kết sẵn sàng tải.
+
+## Lịch sử bản 2.0.4 — kiểm tra khóa tệp trước khi cập nhật
 
 [Lần dựng Windows 40293108356](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/actions/runs/40293108356) đã thành công với mã nguồn [24ac98957eb3eac213cbe18d0556ed92856989eb](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/tree/24ac98957eb3eac213cbe18d0556ed92856989eb). Toàn bộ **116 kiểm thử** đạt, EXE đóng gói vượt qua tự kiểm tra nghiệp vụ/GUI, ma trận **64 kiểm tra bố cục và 65 PNG**. Bộ cài đạt cài/gỡ cơ bản và kiểm tra hồi quy nâng cấp từ đúng bản 2.0.3 đã phát hành.
 
