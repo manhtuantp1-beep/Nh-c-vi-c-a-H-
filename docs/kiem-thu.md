@@ -2,9 +2,11 @@
 
 ## Bản 2.0.5 — Lưới, Danh sách và Rộng
 
-Trạng thái: đang tích hợp và kiểm tra mã nguồn. Chưa chạy lần dựng Windows hoặc xác nhận EXE, cài/gỡ, kích thước hay SHA256 của bộ cài 2.0.5. Môi trường hiện trả lỗi Forbidden khi truy cập GitHub API; kết quả các bản trước không được dùng làm bằng chứng cho 2.0.5.
+Mã ứng dụng tại [d5f94fd23caa5952606988c5fb496f93fb80e609](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/tree/d5f94fd23caa5952606988c5fb496f93fb80e609) đã đạt **125 kiểm thử trên Linux/Xvfb**. Tự kiểm tra nghiệp vụ và GUI đạt; báo cáo GUI gồm 7 mục, có mặc định Lưới, đổi cả ba kiểu xem và cửa sổ Ctrl+F. Ma trận ảnh có đầy đủ chữ Unicode đạt **72 kiểm tra bố cục và tạo 73 PNG**, dùng dữ liệu tổng hợp tạm thời.
 
-Phạm vi cần kiểm tra:
+Tag `v2.0.5` đã được đẩy để chạy dựng Windows và nối với phát hành sau khi dựng thành công. Kết quả Windows EXE, cài/gỡ, mã nguồn của lần dựng, kích thước và SHA256 bộ cài vẫn đang chờ xác nhận. Kết quả các bản trước không được dùng làm bằng chứng cho 2.0.5.
+
+Phạm vi đã kiểm tra trong mã nguồn và ma trận Linux:
 
 - Khối Hiển thị/Tìm công việc/Bộ lọc và hàng đếm, ghi chú dưới khối đó đã được bỏ; tiêu đề, ba ô thống kê và nút tạo việc vẫn hiển thị.
 - Trang mới mặc định Lưới; đổi Lưới/Danh sách/Rộng giữ đúng ID, trạng thái, nội dung và ghi chú. Kiểu xem được dùng chung giữa các trang công việc trong phiên hiện tại.
@@ -15,7 +17,20 @@ Phạm vi cần kiểm tra:
 
 Các kiểm tra công khai dùng dữ liệu tổng hợp tạm thời. Với một bản sao lưu của người dùng, cần đối chiếu cấu trúc và toàn bộ bản ghi sau khôi phục, xác nhận tệp nguồn không bị thay đổi và giữ bản trước khôi phục. Báo cáo riêng không nằm trong kho mã nguồn.
 
-Kế hoạch Windows giữ kiểm tra EXE/GUI/PerMonitorV2, ảnh theo các kiểu xem và các pha Tk, cài/gỡ, cùng kiểm tra khóa tệp từ bộ cài 2.0.3 đã phát hành. Số kiểm thử, kết quả chụp ảnh và mã nguồn đã kiểm thử của 2.0.5 sẽ được ghi sau khi chạy xong; không coi cấu hình workflow là kết quả đạt.
+Ma trận Linux dùng hai cỡ cửa sổ logic 1120×720 / 1366×768, pha mặc định và các pha Tk 120/144/192 DPI. Kết quả này chạy từ Python (`frozen=false`, `platform=linux`), không xác nhận EXE Windows hoặc các mức Scale trên màn hình Windows vật lý.
+
+Các lệnh kiểm tra từ thư mục mã nguồn:
+
+```sh
+DISPLAY=:99 python -m unittest discover -s tests -v
+python -m nhacviec --self-test --self-test-report /tmp/nhacviec-2.0.5-core.json
+DISPLAY=:99 python -m nhacviec --gui-smoke-test --self-test-report /tmp/nhacviec-2.0.5-gui.json
+DISPLAY=:104 python -m nhacviec --capture-ui /tmp/nhacviec-2.0.5-ui
+```
+
+Màn hình ảo và phông Unicode phải sẵn sàng trước khi chạy kiểm tra giao diện. Ma trận tỷ lệ lớn cần màn hình ảo chứa đủ cửa sổ, chẳng hạn 3840×2160; phông thiếu ký tự không được coi là ảnh kiểm chứng đạt.
+
+Quy trình Windows giữ kiểm tra EXE/GUI/PerMonitorV2, ảnh theo cả ba kiểu xem và các pha Tk, cài/gỡ, cùng kiểm tra khóa tệp từ bộ cài 2.0.3 đã phát hành. Khi tag `v2.0.5` dựng thành công, workflow phát hành sẽ xác minh tag trỏ đúng commit đã kiểm thử thuộc `main`, checksum, báo cáo runtime, bố cục và nâng cấp trước khi xuất bản. Cấu hình này chưa phải bằng chứng Windows đã đạt.
 
 Liên kết dự kiến: [bản phát hành 2.0.5](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/tag/windows-2.0.5-preview.1), [Lưới](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/download/windows-2.0.5-preview.1/tasks-1366x768.png), [Danh sách](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/download/windows-2.0.5-preview.1/tasks-list-1366x768.png), [Rộng](https://github.com/manhtuantp1-beep/Nh-c-vi-c-a-H-/releases/download/windows-2.0.5-preview.1/tasks-wide-1366x768.png). Chưa xác nhận các liên kết sẵn sàng tải.
 

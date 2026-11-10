@@ -29,7 +29,8 @@ jobs:
       ${{ github.event_name == 'workflow_dispatch' ||
           (github.event.workflow_run.conclusion == 'success' &&
            github.event.workflow_run.event == 'push' &&
-           github.event.workflow_run.head_branch == 'v2.0.5' &&
+           (github.event.workflow_run.head_branch == 'v2.0.5' ||
+            startsWith(github.event.workflow_run.head_branch, 'v2.0.5-build.')) &&
            github.event.workflow_run.head_repository.full_name == github.repository) }}
     runs-on: windows-2022
     timeout-minutes: 15
@@ -72,17 +73,22 @@ jobs:
           }
           if ($env:GITHUB_EVENT_NAME -ceq 'workflow_run') {
             $Event = Get-Content -LiteralPath $env:GITHUB_EVENT_PATH -Raw | ConvertFrom-Json
+            $SourceTag = [string]$Run.head_branch
+            if ($SourceTag -cnotmatch '\Av2\.0\.5(?:-build\.[1-9][0-9]*)?\z') {
+              throw 'Automatic publication requires an exact 2.0.5 source tag or numbered 2.0.5 build retry tag.'
+            }
             if ([string]$Event.workflow_run.id -cne $env:BUILD_RUN_ID -or
                 ([string]$Event.workflow_run.head_sha).ToLowerInvariant() -cne $ExpectedSha -or
                 $Event.workflow_run.conclusion -cne 'success' -or
                 $Event.workflow_run.head_repository.full_name -ine $env:GITHUB_REPOSITORY -or
-                $Run.event -cne 'push' -or $Run.head_branch -cne 'v2.0.5') {
-              throw 'Automatic publication requires the triggering successful v2.0.5 tag build from this repository.'
+                $Event.workflow_run.head_branch -cne $SourceTag -or
+                $Event.workflow_run.event -cne 'push' -or $Run.event -cne 'push') {
+              throw 'Automatic publication requires the triggering successful 2.0.5 tag build from this repository.'
             }
-            $TagJson = & gh api "repos/$env:GITHUB_REPOSITORY/git/ref/tags/v2.0.5"
+            $TagJson = & gh api "repos/$env:GITHUB_REPOSITORY/git/ref/tags/$SourceTag"
             if ($LASTEXITCODE -ne 0) { throw 'Unable to read the version tag.' }
             $TagRef = ($TagJson -join "`n") | ConvertFrom-Json
-            if ($TagRef.ref -cne 'refs/tags/v2.0.5' -or $TagRef.object.type -cne 'commit' -or
+            if ($TagRef.ref -cne "refs/tags/$SourceTag" -or $TagRef.object.type -cne 'commit' -or
                 ([string]$TagRef.object.sha).ToLowerInvariant() -cne $ExpectedSha) {
               throw 'The lightweight version tag must point directly to the tested source commit.'
             }

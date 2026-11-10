@@ -1,6 +1,6 @@
 # Hướng dẫn sử dụng bản dựng mới
 
-Mã nguồn hiện tại: 2.0.5; bộ cài Windows đang chờ dựng và kiểm tra. Bản này bỏ khối bộ lọc cũ và thêm ba kiểu xem công việc, mặc định Lưới. Xem [bố cục, phím tắt và cách nâng cấp từ 2.0.x](giao-dien.md), cùng [thay đổi về DPI và chữ hiển thị](readability.md).
+Mã nguồn hiện tại: 2.0.5; quy trình Windows đã được khởi chạy từ tag phiên bản và đang chờ kết quả. Bản này bỏ khối bộ lọc cũ và thêm ba kiểu xem công việc, mặc định Lưới. Xem [bố cục, phím tắt và cách nâng cấp từ 2.0.x](giao-dien.md), cùng [thay đổi về DPI và chữ hiển thị](readability.md).
 
 ## Bắt đầu
 

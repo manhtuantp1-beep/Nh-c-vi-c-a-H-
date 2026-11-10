@@ -1,6 +1,6 @@
 # Cài đặt và xử lý lỗi ghi tệp
 
-Mã nguồn hiện tại là 2.0.5; bộ cài Windows 2.0.5 đang chờ dựng và kiểm tra. Cơ chế kiểm tra khóa tệp từ 2.0.4 được giữ trong mã nguồn. Bằng chứng Windows nêu dưới đây thuộc bản 2.0.4 đã phát hành.
+Mã nguồn hiện tại là 2.0.5; quy trình dựng/kiểm tra Windows đã khởi chạy và đang chờ kết quả. Cơ chế kiểm tra khóa tệp từ 2.0.4 được giữ trong mã nguồn. Bằng chứng Windows nêu dưới đây thuộc bản 2.0.4 đã phát hành.
 
 ## Khi bộ cài báo không ghi được `_sqlite3.pyd`
 
